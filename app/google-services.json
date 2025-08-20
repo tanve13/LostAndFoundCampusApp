@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "410934942042",
+    "project_id": "lost-and-found-campus-ap-a366e",
+    "storage_bucket": "lost-and-found-campus-ap-a366e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:410934942042:android:c1f8e4f66ad64f04903b63",
+        "android_client_info": {
+          "package_name": "com.tanveer.lostandcampusapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB8FiQtYH1JESNnvewWLPQ0rK4susKVF4o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
