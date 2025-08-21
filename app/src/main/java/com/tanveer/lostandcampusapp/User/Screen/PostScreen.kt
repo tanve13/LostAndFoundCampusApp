@@ -13,17 +13,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
+import com.tanveer.lostandcampusapp.viewModel.UserViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PostScreen() {
+fun PostScreen(viewModel: UserViewModel = androidx.lifecycle.viewmodel.compose.viewModel()) {
     var selectedCategory by remember { mutableStateOf("Lost") }
     var title by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var location by remember { mutableStateOf("") }
     val date = remember { Calendar.getInstance().time.toString() }
     var imageUri by remember { mutableStateOf<Uri?>(null) }
+    val navController = rememberNavController()
+
     // Image picker launcher
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -110,10 +114,23 @@ fun PostScreen() {
         )
 
         Button(
-            onClick = { /* TODO: Handle submit */ },
+            onClick = {
+                viewModel.submitPost(
+                    category = selectedCategory,
+                    title = title,
+                    desc = description,
+                    location = location,
+                    onSuccess = {
+
+                        navController.navigate("home") {
+                            popUpTo("post") { inclusive = true }
+                        }
+                    }
+                )
+            },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(" Submit Post")
+            Text("Submit Post")
         }
     }
 }

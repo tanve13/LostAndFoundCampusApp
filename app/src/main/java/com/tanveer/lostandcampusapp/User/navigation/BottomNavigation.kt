@@ -19,19 +19,20 @@ import com.tanveer.lostandcampusapp.User.Screen.NotificationScreen
 import com.tanveer.lostandcampusapp.User.Screen.PostScreen
 import com.tanveer.lostandcampusapp.User.Screen.UserMyPostScreen
 import com.tanveer.lostandcampusapp.User.Screen.UserProfileScreen
+import com.tanveer.lostandcampusapp.viewModel.UserViewModel
 
 
 @Composable
 fun BottomNavigation(navController: NavHostController,modifier: Modifier = Modifier){
     NavHost(navController = navController,startDestination = BottomNavItems.Home.route){
         composable(BottomNavItems.Home.route){
-            HomeScreen()
+            HomeScreen(UserViewModel())
         }
         composable(BottomNavItems.MyPost.route){
-            UserMyPostScreen()
+            UserMyPostScreen(UserViewModel())
         }
         composable(BottomNavItems.Post.route) {
-            PostScreen()
+            PostScreen(UserViewModel())
         }
 
         composable(BottomNavItems.Notification.route){
