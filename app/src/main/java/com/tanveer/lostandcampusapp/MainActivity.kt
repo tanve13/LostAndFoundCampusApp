@@ -35,126 +35,60 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    //    @Composable
-//    fun AppNavigation() {
-//        val navController = rememberNavController()
-//        val currentUser = FirebaseAuth.getInstance().currentUser
-//
-//        NavHost(
-//            navController = navController,
-//            startDestination = if (currentUser != null) "userHome" else "signup"
-//        ) {
-//            composable("signup") {
-//                SignUpScreen(
-//                    onSignUpClick = { name, email, regNo, password ->
-//                        navController.navigate("userHome") {
-//                            popUpTo("signup") { inclusive = true }
-//                        }
-//                    },
-//                    onLoginClick = {
-//                        navController.navigate("login")
-//                    }
-//                )
-//            }
-//
-//            composable("login") {
-//                LoginScreen(
-//                    onLoginSuccess = { role ->
-//                        if (role == "admin") {
-//                            navController.navigate("adminHome") {
-//                                popUpTo("login") { inclusive = true }
-//                            }
-//                        } else {
-//                            navController.navigate("userHome") {
-//                                popUpTo("login") { inclusive = true }
-//                            }
-//                        }
-//                    },
-//                    onBackToSignUp = {
-//                        navController.navigate("signup")
-//                    }
-//                )
-//            }
-//
-//            composable("userHome") {
-//                MainNavigation(navController)
-//            }
-//            composable("adminHome") {
-//                AdminNavigation(navController)
-//            }
-//        }
-//    }
-//}
-    @Composable
+        @Composable
     fun AppNavigation() {
         val navController = rememberNavController()
         val currentUser = FirebaseAuth.getInstance().currentUser
-        var startDestination by remember { mutableStateOf<String?>(null) } // initially unknown
 
-        LaunchedEffect(currentUser) {
-            if (currentUser == null) {
-                startDestination = "signup"
-            } else {
-                // fetch role from Firestore
-                val uid = currentUser.uid
-                val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
-                db.collection("users").document(uid).get()
-                    .addOnSuccessListener { document ->
-                        val role = document.getString("role") ?: "user"
-                        startDestination = if (role == "admin") "adminHome" else "userHome"
+        NavHost(
+            navController = navController,
+            startDestination = if (currentUser != null) "userHome" else "signup"
+        ) {
+            composable("signup") {
+                SignUpScreen(
+                    onSignUpClick = { name, email, regNo, password ->
+                        navController.navigate("userHome") {
+                            popUpTo("signup") { inclusive = true }
+                        }
+                    },
+                    onLoginClick = {
+                        navController.navigate("login")
                     }
-                    .addOnFailureListener {
-                        startDestination = "userHome" // fallback
-                    }
+                )
             }
-        }
 
-        if (startDestination != null) {
-            NavHost(
-                navController = navController,
-                startDestination = startDestination!!
-            ) {
-                composable("signup") {
-                    SignUpScreen(
-                        onSignUpClick = { name, email, regNo, password ->
+            composable("login") {
+                LoginScreen(
+                    onLoginSuccess = { role ->
+                        if (role == "admin") {
+                            navController.navigate("adminHome") {
+                                popUpTo("login") { inclusive = true }
+                            }
+                        } else {
                             navController.navigate("userHome") {
-                                popUpTo("signup") { inclusive = true }
+                                popUpTo("login") { inclusive = true }
                             }
-                        },
-                        onLoginClick = {
-                            navController.navigate("login")
                         }
-                    )
-                }
-
-                composable("login") {
-                    LoginScreen(
-                        onLoginSuccess = { role ->
-                            if (role == "admin") {
-                                navController.navigate("adminHome") {
-                                    popUpTo("login") { inclusive = true }
-                                }
-                            } else {
-                                navController.navigate("userHome") {
-                                    popUpTo("login") { inclusive = true }
-                                }
-                            }
-                        },
-                        onBackToSignUp = {
-                            navController.navigate("signup")
-                        }
-                    )
-                }
-
-                composable("userHome") { MainNavigation(navController) }
-                composable("adminHome") { AdminNavigation(navController) }
+                    },
+                    onBackToSignUp = {
+                        navController.navigate("signup")
+                    }
+                )
             }
-        } else {
-            // loading screen jab tak role fetch ho raha hai
-            androidx.compose.material3.CircularProgressIndicator()
+
+            composable("userHome") {
+                val userNavController = rememberNavController()
+
+                MainNavigation(userNavController)
+            }
+            composable("adminHome") {
+                val adminNavController = rememberNavController()
+                AdminNavigation(adminNavController)
+            }
         }
     }
 }
+
 
 @Preview(showBackground = true)
 @Composable

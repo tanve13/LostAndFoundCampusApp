@@ -131,9 +131,7 @@ fun SignUpScreen(
                                 userViewModel.setUserData(savedName, savedReg)
                                 Toast.makeText(context, "Account created Successfully!", Toast.LENGTH_SHORT).show()
                                 onSignUpClick(name,email, regNo, password)
-
-
-                            },
+                                        },
                             onError = { msg ->
                                 Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
                             }

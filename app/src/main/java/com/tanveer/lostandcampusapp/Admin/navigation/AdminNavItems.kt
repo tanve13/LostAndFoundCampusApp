@@ -12,7 +12,7 @@ sealed class AdminNavItem(
     val title: String,
     val icon: ImageVector
 ) {
-    object Dashboard : AdminNavItem("dashboard", "Dashboard", Icons.Default.Leaderboard)
+    object Dashboard : AdminNavItem("adminHome", "Dashboard", Icons.Default.Leaderboard)
     object AllPosts : AdminNavItem("allPosts", "All Posts", Icons.Default.List)
     object Claims : AdminNavItem("claims", "Claims", Icons.Default.Mail)
     object Settings : AdminNavItem("settings", "Settings", Icons.Default.Settings)

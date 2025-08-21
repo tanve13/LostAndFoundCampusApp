@@ -1,9 +1,7 @@
 package com.tanveer.lostandcampusapp.User.navigation
 
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -16,7 +14,6 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
 import com.tanveer.lostandcampusapp.User.Screen.HomeScreen
 import com.tanveer.lostandcampusapp.User.Screen.NotificationScreen
 import com.tanveer.lostandcampusapp.User.Screen.PostScreen
@@ -76,12 +73,12 @@ fun BottomNavigationBar(navController: NavHostController) {
     }
 }
 @Composable
-fun MainNavigation(navController: NavHostController) {   // <-- Parent se navController lo
+fun MainNavigation(navController: NavHostController) {
     Scaffold(
         bottomBar = { BottomNavigationBar(navController) }
     ) { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding)) {
-            BottomNavigation(navController)   // <-- same navController use karo
+            BottomNavigation(navController)
         }
     }
 }
