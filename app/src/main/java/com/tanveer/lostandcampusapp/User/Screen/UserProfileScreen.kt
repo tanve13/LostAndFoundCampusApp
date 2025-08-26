@@ -28,7 +28,7 @@ import com.tanveer.lostandcampusapp.viewModel.UserViewModel
 
 @Composable
 fun UserProfileScreen(
-    navController: NavHostController,
+    navController: NavHostController,rootNavController: NavHostController,
     userViewModel: UserViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
 ) {
     val scrollState = rememberScrollState()
@@ -152,10 +152,23 @@ fun UserProfileScreen(
                 Text("Edit Profile")
             }
 
+//            Button(
+//                onClick = {
+//                    FirebaseAuth.getInstance().signOut()
+//                    navController.navigate("login") {
+//                        popUpTo("userHome") { inclusive = true }
+//                    }
+//                },
+//                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+//            ) {
+//                Icon(Icons.Default.Logout, contentDescription = null, tint = Color.White)
+//                Spacer(Modifier.width(8.dp))
+//                Text("Logout")
+//            }
             Button(
                 onClick = {
                     FirebaseAuth.getInstance().signOut()
-                    navController.navigate("login") {
+                    rootNavController.navigate("login") {
                         popUpTo("userHome") { inclusive = true }
                     }
                 },

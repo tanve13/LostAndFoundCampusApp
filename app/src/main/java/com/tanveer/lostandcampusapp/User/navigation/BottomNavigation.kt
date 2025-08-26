@@ -23,7 +23,7 @@ import com.tanveer.lostandcampusapp.viewModel.UserViewModel
 
 
 @Composable
-fun BottomNavigation(navController: NavHostController,modifier: Modifier = Modifier){
+fun BottomNavigation(navController: NavHostController, rootNavController: NavHostController,modifier: Modifier = Modifier){
     NavHost(navController = navController,startDestination = BottomNavItems.Home.route){
         composable(BottomNavItems.Home.route){
             HomeScreen(UserViewModel())
@@ -39,7 +39,7 @@ fun BottomNavigation(navController: NavHostController,modifier: Modifier = Modif
             NotificationScreen()
         }
         composable(BottomNavItems.Profile.route){
-           UserProfileScreen(navController = navController)
+           UserProfileScreen(navController = navController, rootNavController = rootNavController)
         }
     }
 }
@@ -74,12 +74,12 @@ fun BottomNavigationBar(navController: NavHostController) {
     }
 }
 @Composable
-fun MainNavigation(navController: NavHostController) {
+fun MainNavigation(navController: NavHostController, rootNavController: NavHostController) {
     Scaffold(
         bottomBar = { BottomNavigationBar(navController) }
     ) { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding)) {
-            BottomNavigation(navController)
+            BottomNavigation(navController,rootNavController)
         }
     }
 }

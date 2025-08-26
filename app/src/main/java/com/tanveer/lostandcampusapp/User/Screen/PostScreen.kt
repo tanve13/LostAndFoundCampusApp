@@ -15,7 +15,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
+import com.tanveer.lostandcampusapp.data.PostRepo
+import com.tanveer.lostandcampusapp.model.CloudinaryHelper
 import com.tanveer.lostandcampusapp.viewModel.UserViewModel
+import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -113,24 +116,26 @@ fun PostScreen(viewModel: UserViewModel = androidx.lifecycle.viewmodel.compose.v
             enabled = false
         )
 
-        Button(
-            onClick = {
-                viewModel.submitPost(
-                    category = selectedCategory,
-                    title = title,
-                    desc = description,
-                    location = location,
-                    onSuccess = {
-
-                        navController.navigate("home") {
-                            popUpTo("post") { inclusive = true }
-                        }
+        Button(onClick = {
+            imageUri?.let { uri ->
+                val file = File(uri.path!!) // tumhe File convert karna hoga
+                CloudinaryHelper.uploadImage(file) { success, url ->
+                    if (success && url != null) {
+                        // ✅ Cloudinary par image upload ho gayi
+                        // Ab Firebase Firestore me post save karo with url
+                        PostRepo.createPost(
+                            category = selectedCategory,
+                            title = title,
+                            description = description,
+                            location = location,
+                            imageUrl = url
+                        )
                     }
-                )
-            },
-            modifier = Modifier.fillMaxWidth()
-        ) {
+                }
+            }
+        }) {
             Text("Submit Post")
         }
+
     }
 }

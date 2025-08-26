@@ -13,6 +13,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -79,7 +80,7 @@ class MainActivity : ComponentActivity() {
             composable("userHome") {
                 val userNavController = rememberNavController()
 
-                MainNavigation(userNavController)
+                MainNavigation(userNavController,rootNavController = navController)
             }
             composable("adminHome") {
                 val adminNavController = rememberNavController()
@@ -94,14 +95,14 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun GreetingPreview() {
     LostAndCampusAppTheme {
-        val navController = rememberNavController()
-        Scaffold(
-            bottomBar = { BottomNavigationBar(navController = navController) }
-        ) { innerPadding ->
-            BottomNavigation(
-                navController = navController,
-                modifier = Modifier.padding(innerPadding)
-            )
-        }
+//        val navController = rememberNavController()
+//        Scaffold(
+//            bottomBar = { BottomNavigationBar(navController = navController) }
+//        ) { innerPadding ->
+//            BottomNavigation(
+//                navController = navController,rootNavController: NavHostController,
+//                modifier = Modifier.padding(innerPadding)
+//            )
+//        }
     }
 }

@@ -1,5 +1,6 @@
 package com.tanveer.lostandcampusapp.User.Screen
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -9,6 +10,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -20,6 +22,7 @@ import com.tanveer.lostandcampusapp.viewModel.UserViewModel
 fun HomeScreen(viewModel: UserViewModel) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedFilter by remember { mutableStateOf("All") }
+    var selectedCategory by remember { mutableStateOf("Lost") }
 
     val posts = viewModel.allPosts.value
 
@@ -45,17 +48,31 @@ fun HomeScreen(viewModel: UserViewModel) {
         Spacer(modifier = Modifier.height(12.dp))
 
         // 🔘 Filter Chips - All, Lost, Found
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf("All", "Lost", "Found").forEach { category ->
-                AssistChip(
-                    onClick = { selectedFilter = category },
-                    label = { Text(category) },
-                    colors = AssistChipDefaults.assistChipColors(
-                        if (selectedFilter == category) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface
-                    )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            listOf("Lost", "Found").forEach { category ->
+                FilterChip(
+                    selected = selectedCategory == category,
+                    onClick = { selectedCategory = category },
+                    label = {
+                        Text(
+                            text = category,
+                            color = if (selectedCategory == category) Color.White else Color.Black
+                        )
+                    },
+                    colors = FilterChipDefaults.filterChipColors(
+                        containerColor = Color.Transparent,
+                        selectedContainerColor = Color.Black
+                    ),
+                    border = BorderStroke(1.dp, Color.Black)
                 )
             }
         }
+
 
         Spacer(modifier = Modifier.height(12.dp))
 
