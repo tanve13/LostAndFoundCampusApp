@@ -13,8 +13,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
+import com.tanveer.lostandcampusapp.R
 import com.tanveer.lostandcampusapp.model.Post
 import com.tanveer.lostandcampusapp.viewModel.UserViewModel
 import kotlinx.coroutines.CoroutineScope
@@ -64,6 +67,15 @@ fun UserMyPostScreen(viewModel: UserViewModel) {
                     Column(
                         modifier = Modifier.padding(16.dp)
                     ) {
+                        AsyncImage(
+                            model = post.imageUrl ?: R.drawable.wallet,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(180.dp),
+                            contentScale = ContentScale.Crop
+                        )
+
                         Text(post.title, style = MaterialTheme.typography.titleMedium)
                         Text(post.description, style = MaterialTheme.typography.bodyMedium)
                         Spacer(Modifier.height(4.dp))

@@ -10,7 +10,8 @@ object PostRepo {
     private val db = FirebaseFirestore.getInstance()
     private val postsCollection = db.collection("posts")
 
-    suspend fun createPost(category: String, title: String, description: String, location: String) {
+    suspend fun createPost(category: String, title: String, description: String, location: String,imageUrl: String? = null   // 👈 yeh add karo
+    ) {
         val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
         val postId = postsCollection.document().id
         val post = Post(
@@ -20,7 +21,9 @@ object PostRepo {
             title = title,
             description = description,
             location = location,
-            timestamp = System.currentTimeMillis().toString()
+            imageUrl = imageUrl ,
+            timestamp = System.currentTimeMillis().toString(),
+
         )
         postsCollection.document(postId).set(post).await()
     }

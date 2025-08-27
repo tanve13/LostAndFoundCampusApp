@@ -2,6 +2,7 @@ package com.tanveer.lostandcampusapp.User.Screen
 
 import android.icu.util.Calendar
 import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
@@ -11,6 +12,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.rememberNavController
@@ -18,6 +21,7 @@ import coil.compose.AsyncImage
 import com.tanveer.lostandcampusapp.data.PostRepo
 import com.tanveer.lostandcampusapp.model.CloudinaryHelper
 import com.tanveer.lostandcampusapp.viewModel.UserViewModel
+import kotlinx.coroutines.launch
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -30,6 +34,9 @@ fun PostScreen(viewModel: UserViewModel = androidx.lifecycle.viewmodel.compose.v
     val date = remember { Calendar.getInstance().time.toString() }
     var imageUri by remember { mutableStateOf<Uri?>(null) }
     val navController = rememberNavController()
+    val scope = rememberCoroutineScope()
+    var isLoading by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     // Image picker launcher
     val launcher = rememberLauncherForActivityResult(
@@ -118,23 +125,51 @@ fun PostScreen(viewModel: UserViewModel = androidx.lifecycle.viewmodel.compose.v
 
         Button(onClick = {
             imageUri?.let { uri ->
-                val file = File(uri.path!!) // tumhe File convert karna hoga
+                val file = File(uri.path!!)
+                isLoading = true
                 CloudinaryHelper.uploadImage(file) { success, url ->
                     if (success && url != null) {
-                        // ✅ Cloudinary par image upload ho gayi
-                        // Ab Firebase Firestore me post save karo with url
-                        PostRepo.createPost(
-                            category = selectedCategory,
-                            title = title,
-                            description = description,
-                            location = location,
-                            imageUrl = url
-                        )
+                        scope.launch {
+                            try {
+                                PostRepo.createPost(
+                                    category = selectedCategory,
+                                    title = title,
+                                    description = description,
+                                    location = location,
+                                    imageUrl = url
+                                )
+                                isLoading = false
+                                Toast.makeText(context, "Post submitted!", Toast.LENGTH_SHORT).show()
+
+                            }catch (e:Exception){
+                                isLoading = false
+                                Toast.makeText(context, " Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }else{
+                        isLoading = false
+                        Toast.makeText(context, " Image upload failed!", Toast.LENGTH_SHORT).show()
+
                     }
                 }
             }
-        }) {
-            Text("Submit Post")
+
+        },
+            enabled = !isLoading,
+            modifier = Modifier
+                .fillMaxWidth(0.6f)
+                .height(50.dp),
+            shape = MaterialTheme.shapes.medium
+        ) {
+            if (isLoading) {
+                CircularProgressIndicator(
+                    color = Color.White,
+                    strokeWidth = 2.dp,
+                    modifier = Modifier.size(24.dp)
+                )
+            } else {
+                Text("Submit Post")
+            }
         }
 
     }

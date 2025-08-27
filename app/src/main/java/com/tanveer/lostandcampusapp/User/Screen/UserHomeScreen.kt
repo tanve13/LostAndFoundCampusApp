@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import com.tanveer.lostandcampusapp.R
 import com.tanveer.lostandcampusapp.model.Post
 import com.tanveer.lostandcampusapp.viewModel.UserViewModel
@@ -113,15 +114,16 @@ fun PostCard(post: Post) {
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
         Column {
-            // 📷 Image (abhi ke liye static image, bad me cloudinary url)
-            Image(
-                painter = painterResource(id = R.drawable.wallet),
+            // Agar imageUrl hai to wo dikhaye, warna fallback
+            AsyncImage(
+                model = post.imageUrl ?: R.drawable.wallet, // Cloudinary url ya fallback image
                 contentDescription = null,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(180.dp),
                 contentScale = ContentScale.Crop
             )
+
             Column(modifier = Modifier.padding(8.dp)) {
                 Text(post.title, style = MaterialTheme.typography.titleMedium)
                 Text(post.description, style = MaterialTheme.typography.bodyMedium)
@@ -131,7 +133,7 @@ fun PostCard(post: Post) {
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text("📍 ${post.location}  |  ${post.timestamp}")
-                    Button(onClick = { /* Claim action later */ }) {
+                    Button(onClick = { /* Claim action */ }) {
                         Text("Claim")
                     }
                 }
@@ -139,3 +141,4 @@ fun PostCard(post: Post) {
         }
     }
 }
+
