@@ -24,10 +24,9 @@ fun HomeScreen(viewModel: UserViewModel) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedFilter by remember { mutableStateOf("All") }
     var selectedCategory by remember { mutableStateOf("Lost") }
-
     val posts = viewModel.allPosts.value
 
-    // Posts load karte hi fetch ho jaye
+
     LaunchedEffect(Unit) {
         viewModel.loadAllPosts()
     }
@@ -37,7 +36,7 @@ fun HomeScreen(viewModel: UserViewModel) {
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // 🔍 Search Bar
+
         OutlinedTextField(
             value = searchQuery,
             onValueChange = { searchQuery = it },
@@ -45,10 +44,8 @@ fun HomeScreen(viewModel: UserViewModel) {
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
             modifier = Modifier.fillMaxWidth()
         )
-
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 🔘 Filter Chips - All, Lost, Found
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -73,11 +70,9 @@ fun HomeScreen(viewModel: UserViewModel) {
                 )
             }
         }
-
-
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 🔄 Apply Search & Filter
+        ///jaha maine search ka and filter ka logic lgyeia hai!
         val filteredPosts = posts.filter { post ->
             val matchesSearch = searchQuery.isBlank() ||
                     post.title.contains(searchQuery, ignoreCase = true) ||
@@ -92,7 +87,7 @@ fun HomeScreen(viewModel: UserViewModel) {
             matchesSearch && matchesFilter
         }
 
-        // 📝 Show Posts
+       //jaha post show hogi like agr post abhi nai hai to kush nai show hoga
         if (filteredPosts.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
                 Text("No posts found")
@@ -114,9 +109,8 @@ fun PostCard(post: Post) {
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
         Column {
-            // Agar imageUrl hai to wo dikhaye, warna fallback
             AsyncImage(
-                model = post.imageUrl ?: R.drawable.wallet, // Cloudinary url ya fallback image
+                model = post.imageUrl,
                 contentDescription = null,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -133,6 +127,7 @@ fun PostCard(post: Post) {
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text("📍 ${post.location}  |  ${post.timestamp}")
+
                     Button(onClick = { /* Claim action */ }) {
                         Text("Claim")
                     }

@@ -32,7 +32,7 @@ fun BottomNavigation(navController: NavHostController, rootNavController: NavHos
             UserMyPostScreen(UserViewModel())
         }
         composable(BottomNavItems.Post.route) {
-            PostScreen(UserViewModel())
+            PostScreen(navController,UserViewModel())
         }
 
         composable(BottomNavItems.Notification.route){

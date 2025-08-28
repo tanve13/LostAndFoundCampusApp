@@ -30,14 +30,11 @@ fun UserMyPostScreen(viewModel: UserViewModel) {
     val context = LocalContext.current
     val posts = viewModel.myPosts.value
 
-
-    // Load posts when screen opens
     LaunchedEffect(Unit) {
         viewModel.loadMyPosts()
     }
 
     if (posts.isEmpty()) {
-        // Empty state UI
         Column(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.Center,
@@ -51,7 +48,6 @@ fun UserMyPostScreen(viewModel: UserViewModel) {
             Text("You haven't created any posts yet")
         }
     } else {
-        // Show posts list
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -68,7 +64,7 @@ fun UserMyPostScreen(viewModel: UserViewModel) {
                         modifier = Modifier.padding(16.dp)
                     ) {
                         AsyncImage(
-                            model = post.imageUrl ?: R.drawable.wallet,
+                            model = post.imageUrl,
                             contentDescription = null,
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -88,14 +84,12 @@ fun UserMyPostScreen(viewModel: UserViewModel) {
                             horizontalArrangement = Arrangement.End,
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            // Update Button (placeholder)
                             IconButton(onClick = {
                                 Toast.makeText(context, "Update post coming soon", Toast.LENGTH_SHORT).show()
                             }) {
                                 Icon(Icons.Default.Edit, contentDescription = "Update")
                             }
 
-                            // Delete Button
                             IconButton(onClick = {
                                 CoroutineScope(Dispatchers.IO).launch {
                                     viewModel.deletePost(post.id)
