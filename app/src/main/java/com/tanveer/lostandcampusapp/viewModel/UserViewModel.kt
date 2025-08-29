@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.tanveer.lostandcampusapp.data.PostRepo
 import com.tanveer.lostandcampusapp.model.Post
@@ -14,7 +15,6 @@ import java.util.UUID
 class UserViewModel : ViewModel() {
     var name = mutableStateOf("")
     var regNo = mutableStateOf("")
-
     var allPosts = mutableStateOf<List<Post>>(emptyList())
     var myPosts = mutableStateOf<List<Post>>(emptyList())
 
@@ -39,15 +39,18 @@ class UserViewModel : ViewModel() {
         CloudinaryHelper.uploadImage(imageFile) { success, url ->
             if (success && url != null) {
                 viewModelScope.launch {
+                    val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return@launch
                     val post = Post(
                         id = UUID.randomUUID().toString(),
-                        userId = regNo.value, // ya FirebaseAuth.getInstance().currentUser?.uid ?: ""
+                        userId = regNo.value,
                         category = category,
                         title = title,
                         description = desc,
                         location = location,
                         imageUrl = url,
-                        timestamp = System.currentTimeMillis()
+                        timestamp = System.currentTimeMillis(),
+                        userName = name.value,
+                        userRegNo = regNo.value
                     )
 
                     FirebaseFirestore.getInstance()
@@ -80,9 +83,11 @@ class UserViewModel : ViewModel() {
 
     fun loadMyPosts() {
         viewModelScope.launch {
-            myPosts.value = PostRepo.getMyPosts()
+            val posts = PostRepo.getMyPosts(regNo.value)
+            myPosts.value = posts
         }
     }
+
 
     fun deletePost(postId: String) {
         viewModelScope.launch {
@@ -91,7 +96,13 @@ class UserViewModel : ViewModel() {
             loadAllPosts()
         }
     }
-    fun claimPost(postId: String, claimerId: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
+
+    fun claimPost(
+        postId: String,
+        claimerId: String,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
         viewModelScope.launch {
             try {
                 val db = FirebaseFirestore.getInstance()

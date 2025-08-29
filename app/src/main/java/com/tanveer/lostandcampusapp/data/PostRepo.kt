@@ -12,7 +12,12 @@ object PostRepo {
     private val db = FirebaseFirestore.getInstance()
     private val postsCollection = db.collection("posts")
 
-    suspend fun createPost(category: String, title: String, description: String, location: String,imageUrl: String? = null
+    suspend fun createPost(
+        category: String,
+        title: String,
+        description: String,
+        location: String,
+        imageUrl: String? = null
     ) {
         val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
         val postId = postsCollection.document().id
@@ -23,46 +28,41 @@ object PostRepo {
             title = title,
             description = description,
             location = location,
-            imageUrl = imageUrl ,
+            imageUrl = imageUrl,
             timestamp = System.currentTimeMillis()
 
         )
         postsCollection.document(postId).set(post).await()
     }
 
-//    suspend fun getAllPosts(): List<Post> {
-//        return try {
-//            postsCollection.get().await().toObjects(Post::class.java)
-//        } catch (e: Exception) {
-//            emptyList()
-//        }
-//    }
-fun getAllPosts(): Flow<List<Post>> = callbackFlow {
-    val listener = postsCollection.addSnapshotListener { snapshot, e ->
-        if (e != null) {
-            trySend(emptyList())
-            return@addSnapshotListener
+    fun getAllPosts(): Flow<List<Post>> = callbackFlow {
+        val listener = postsCollection.addSnapshotListener { snapshot, e ->
+            if (e != null) {
+                trySend(emptyList())
+                return@addSnapshotListener
+            }
+            if (snapshot != null) {
+                val postsList = snapshot.toObjects(Post::class.java)
+                trySend(postsList)
+            } else {
+                trySend(emptyList())
+            }
         }
-        if (snapshot != null) {
-            val postsList = snapshot.toObjects(Post::class.java)
-            trySend(postsList)
-        } else {
-            trySend(emptyList())
-        }
-    }
-    awaitClose { listener.remove() }
-}
-
-    suspend fun getMyPosts(): List<Post> {
-        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return emptyList()
-        return try {
-            postsCollection.whereEqualTo("userId", userId).get().await().toObjects(Post::class.java)
-        } catch (e: Exception) {
-            emptyList()
-        }
+        awaitClose { listener.remove() }
     }
 
-   suspend fun deletePost(postId: String) {
+    suspend fun getMyPosts(userRegNo: String): List<Post> {
+        val db = FirebaseFirestore.getInstance()
+        val snapshot = db.collection("posts")
+            .whereEqualTo("userRegNo", userRegNo)
+            .get()
+            .await()
+
+        return snapshot.toObjects(Post::class.java)
+    }
+
+
+    suspend fun deletePost(postId: String) {
         try {
             postsCollection.document(postId).delete().await()
         } catch (e: Exception) {

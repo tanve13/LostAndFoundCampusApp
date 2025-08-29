@@ -99,45 +99,6 @@ fun UserProfileScreen(
 
         Spacer(Modifier.height(24.dp))
 
-        // ==== My Posts Section ====
-        Text(
-            text = "My Posts",
-            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-            modifier = Modifier
-                .align(Alignment.Start)
-                .padding(horizontal = 16.dp)
-        )
-
-        Spacer(Modifier.height(12.dp))
-
-        // Example Post Cards
-        repeat(3) { index ->
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                )
-            ) {
-                Row(modifier = Modifier.padding(16.dp)) {
-                    Image(
-                        painter = painterResource(id = R.drawable.ic_launcher_foreground),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(60.dp)
-                            .clip(CircleShape)
-                    )
-                    Spacer(Modifier.width(12.dp))
-                    Column {
-                        Text("Post Title $index", fontWeight = FontWeight.Bold)
-                        Text("Short description of the post goes here...", style = MaterialTheme.typography.bodySmall)
-                    }
-                }
-            }
-        }
-
-        Spacer(Modifier.height(40.dp))
 
         // ==== Action Buttons ====
         Row(
@@ -151,20 +112,6 @@ fun UserProfileScreen(
                 Spacer(Modifier.width(8.dp))
                 Text("Edit Profile")
             }
-
-//            Button(
-//                onClick = {
-//                    FirebaseAuth.getInstance().signOut()
-//                    navController.navigate("login") {
-//                        popUpTo("userHome") { inclusive = true }
-//                    }
-//                },
-//                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-//            ) {
-//                Icon(Icons.Default.Logout, contentDescription = null, tint = Color.White)
-//                Spacer(Modifier.width(8.dp))
-//                Text("Logout")
-//            }
             Button(
                 onClick = {
                     FirebaseAuth.getInstance().signOut()

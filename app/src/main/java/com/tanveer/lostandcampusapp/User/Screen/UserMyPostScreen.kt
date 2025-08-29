@@ -86,7 +86,7 @@ fun UserMyPostScreen(viewModel: UserViewModel) {
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             IconButton(onClick = {
-                                Toast.makeText(context, "Update post coming soon", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "Update ka km krna hai ", Toast.LENGTH_SHORT).show()
                             }) {
                                 Icon(Icons.Default.Edit, contentDescription = "Update")
                             }

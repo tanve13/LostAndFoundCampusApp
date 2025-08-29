@@ -9,7 +9,8 @@ data class Post(
     val location: String = "",
     val imageUrl: String? = null,
     val timestamp: Long = System.currentTimeMillis(),
-    val claimedBy: String? = null
-
+    val claimedBy: String? = null,
+    val userName: String?= "",
+    val userRegNo: String?= ""
 )
 

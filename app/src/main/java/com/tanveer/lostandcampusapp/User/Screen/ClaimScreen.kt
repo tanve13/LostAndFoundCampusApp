@@ -11,14 +11,21 @@ import com.tanveer.lostandcampusapp.viewModel.UserViewModel
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import coil.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
+import com.tanveer.lostandcampusapp.data.DataStoreManager
 
 @Composable
-fun ClaimScreen(post: Post, viewModel: UserViewModel, navController: NavController) {
+fun ClaimScreen(post: Post, viewModel: UserViewModel, navController: NavController,
+                userViewModel: UserViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+) {
     val context = LocalContext.current
-
+    LaunchedEffect(Unit) {
+        val (savedName, savedRegNo) = DataStoreManager.getUserData(context)
+        userViewModel.setUserData(savedName, savedRegNo)
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -41,7 +48,9 @@ fun ClaimScreen(post: Post, viewModel: UserViewModel, navController: NavControll
         Text("Title: ${post.title}", style = MaterialTheme.typography.titleMedium)
         Text("Description: ${post.description}")
         Text("Location: ${post.location}")
-        Text("Posted by: ${post.userId}")
+        Text("Posted by: ${post.userName} (${post.userRegNo})",
+            style = MaterialTheme.typography.bodySmall)
+
 
         Spacer(Modifier.height(20.dp))
 
@@ -53,7 +62,7 @@ fun ClaimScreen(post: Post, viewModel: UserViewModel, navController: NavControll
                     claimerId = currentUserId,
                     onSuccess = {
                         Toast.makeText(context, "Claimed successfully!", Toast.LENGTH_SHORT).show()
-                        navController.popBackStack() // go back
+                        navController.popBackStack()
                     },
                     onError = {
                         Toast.makeText(context, "Error: $it", Toast.LENGTH_SHORT).show()

@@ -1,6 +1,7 @@
 package com.tanveer.lostandcampusapp
 
 import android.widget.Toast
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -19,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import com.google.firebase.auth.FirebaseAuth
 import com.tanveer.lostandcampusapp.data.AuthRepo
 import com.tanveer.lostandcampusapp.data.DataStoreManager
+import com.tanveer.lostandcampusapp.viewModel.UserViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -26,15 +28,21 @@ import kotlinx.coroutines.launch
 @Composable
 fun LoginScreen(
     onLoginSuccess: (Any?) -> Unit,
-    onBackToSignUp: () -> Unit
+    onBackToSignUp: () -> Unit,userViewModel: UserViewModel
+
 ) {
     var regNo by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var isPasswordVisible by remember { mutableStateOf(false) }
-
     val context = LocalContext.current
     val auth = FirebaseAuth.getInstance()
 
+    LaunchedEffect(Unit) {
+        val (savedName, savedReg) = DataStoreManager.getUserData(context)
+        if (savedName.isNotEmpty() && savedReg.isNotEmpty()) {
+            userViewModel.setUserData(savedName, savedReg)
+        }
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -119,6 +127,7 @@ fun LoginScreen(
                                 CoroutineScope(Dispatchers.IO).launch {
                                     DataStoreManager.saveUserData(context, nameFromDb, regNoFromDb)
                                 }
+                                userViewModel.setUserData(nameFromDb, regNoFromDb)
 
                             },
                             onError = { msg ->
