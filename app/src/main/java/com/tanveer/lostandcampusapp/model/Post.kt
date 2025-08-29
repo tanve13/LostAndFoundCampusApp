@@ -8,6 +8,8 @@ data class Post(
     val description: String = "",
     val location: String = "",
     val imageUrl: String? = null,
-    val timestamp: String = System.currentTimeMillis().toString()
+    val timestamp: Long = System.currentTimeMillis(),
+    val claimedBy: String? = null
+
 )
 

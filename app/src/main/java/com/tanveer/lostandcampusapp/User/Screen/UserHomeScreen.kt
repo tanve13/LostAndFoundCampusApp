@@ -5,26 +5,33 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.tanveer.lostandcampusapp.R
 import com.tanveer.lostandcampusapp.model.Post
 import com.tanveer.lostandcampusapp.viewModel.UserViewModel
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
-fun HomeScreen(viewModel: UserViewModel) {
+fun HomeScreen( viewModel: UserViewModel,navController: NavController) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedFilter by remember { mutableStateOf("All") }
-    var selectedCategory by remember { mutableStateOf("Lost") }
-    val posts = viewModel.allPosts.value
+    val posts by viewModel.allPosts
 
 
     LaunchedEffect(Unit) {
@@ -52,16 +59,11 @@ fun HomeScreen(viewModel: UserViewModel) {
                 .padding(vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            listOf("Lost", "Found").forEach { category ->
+            listOf("All","Lost", "Found").forEach { filter ->
                 FilterChip(
-                    selected = selectedCategory == category,
-                    onClick = { selectedCategory = category },
-                    label = {
-                        Text(
-                            text = category,
-                            color = if (selectedCategory == category) Color.White else Color.Black
-                        )
-                    },
+                    selected = selectedFilter == filter,
+                    onClick = { selectedFilter = filter },
+                    label = { Text(filter) },
                     colors = FilterChipDefaults.filterChipColors(
                         containerColor = Color.Transparent,
                         selectedContainerColor = Color.Black
@@ -95,40 +97,71 @@ fun HomeScreen(viewModel: UserViewModel) {
         } else {
             LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 items(filteredPosts) { post ->
-                    PostCard(post)
+                    PostCard(post, navController = navController)
                 }
             }
         }
     }
 }
-
 @Composable
-fun PostCard(post: Post) {
+fun PostCard(post: Post,navController: NavController) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(4.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp),
+        elevation = CardDefaults.cardElevation(6.dp),
+        shape = RoundedCornerShape(16.dp)
     ) {
         Column {
+            // 🖼 Image section
             AsyncImage(
                 model = post.imageUrl,
                 contentDescription = null,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(180.dp),
+                    .height(200.dp), // fixed image height
                 contentScale = ContentScale.Crop
             )
 
-            Column(modifier = Modifier.padding(8.dp)) {
-                Text(post.title, style = MaterialTheme.typography.titleMedium)
-                Text(post.description, style = MaterialTheme.typography.bodyMedium)
-                Spacer(modifier = Modifier.height(6.dp))
+
+            Column(modifier = Modifier.padding(12.dp)) {
+                Text(
+                    post.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    post.description,
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("📍 ${post.location}  |  ${post.timestamp}")
+                    Column {
+                        Text(
+                            "📍 ${post.location}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.Gray
+                        )
+                        Text(
+                            "🕒 ${formatTimestamp(post.timestamp)}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.Gray
+                        )
+                    }
 
-                    Button(onClick = { /* Claim action */ }) {
+                    Button(
+                        onClick = { navController.navigate("claim/${post.id}") },
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                    ) {
                         Text("Claim")
                     }
                 }
@@ -136,4 +169,11 @@ fun PostCard(post: Post) {
         }
     }
 }
+
+fun formatTimestamp(timestamp: Long): String {
+    val sdf = SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault())
+    return sdf.format(Date(timestamp))
+}
+
+
 

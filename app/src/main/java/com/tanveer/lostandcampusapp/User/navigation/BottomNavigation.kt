@@ -10,10 +10,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.navArgument
+import com.tanveer.lostandcampusapp.User.Screen.ClaimScreen
 import com.tanveer.lostandcampusapp.User.Screen.HomeScreen
 import com.tanveer.lostandcampusapp.User.Screen.NotificationScreen
 import com.tanveer.lostandcampusapp.User.Screen.PostScreen
@@ -23,23 +27,46 @@ import com.tanveer.lostandcampusapp.viewModel.UserViewModel
 
 
 @Composable
-fun BottomNavigation(navController: NavHostController, rootNavController: NavHostController,modifier: Modifier = Modifier){
-    NavHost(navController = navController,startDestination = BottomNavItems.Home.route){
-        composable(BottomNavItems.Home.route){
-            HomeScreen(UserViewModel())
+fun BottomNavigation(
+    navController: NavHostController,
+    rootNavController: NavHostController,
+    modifier: Modifier = Modifier
+) {
+    val userViewModel: UserViewModel = viewModel()
+
+    NavHost(navController = navController, startDestination = BottomNavItems.Home.route) {
+        composable(BottomNavItems.Home.route) {
+            HomeScreen(viewModel = userViewModel, navController)
         }
-        composable(BottomNavItems.MyPost.route){
-            UserMyPostScreen(UserViewModel())
+        composable(BottomNavItems.MyPost.route) {
+            UserMyPostScreen(viewModel = userViewModel)
         }
         composable(BottomNavItems.Post.route) {
-            PostScreen(navController,UserViewModel())
+            PostScreen(navController, viewModel = userViewModel)
         }
 
-        composable(BottomNavItems.Notification.route){
+        composable(BottomNavItems.Notification.route) {
             NotificationScreen()
         }
-        composable(BottomNavItems.Profile.route){
-           UserProfileScreen(navController = navController, rootNavController = rootNavController)
+        composable(BottomNavItems.Profile.route) {
+            UserProfileScreen(navController = navController, rootNavController = rootNavController)
+        }
+        composable(
+            route = "claim/{postId}",
+            arguments = listOf(navArgument("postId") { type = NavType.StringType })
+        ) { backStackEntry ->
+
+            val postId = backStackEntry.arguments?.getString("postId")
+            val posts = userViewModel.allPosts.value
+            val post = posts.find { it.id == postId }
+
+            post?.let {
+                ClaimScreen(
+                    post = it,
+                    viewModel = userViewModel,
+                    navController = navController
+                )
+            }
         }
     }
 }
@@ -73,13 +100,14 @@ fun BottomNavigationBar(navController: NavHostController) {
         }
     }
 }
+
 @Composable
 fun MainNavigation(navController: NavHostController, rootNavController: NavHostController) {
     Scaffold(
         bottomBar = { BottomNavigationBar(navController) }
     ) { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding)) {
-            BottomNavigation(navController,rootNavController)
+            BottomNavigation(navController, rootNavController)
         }
     }
 }

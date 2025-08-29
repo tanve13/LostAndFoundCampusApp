@@ -19,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.tanveer.lostandcampusapp.User.navigation.BottomNavItems
 import com.tanveer.lostandcampusapp.data.PostRepo
 import com.tanveer.lostandcampusapp.viewModel.UserViewModel
 import kotlinx.coroutines.launch
@@ -26,14 +27,16 @@ import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PostScreen(navController: NavController, viewModel: UserViewModel = androidx.lifecycle.viewmodel.compose.viewModel()) {
+fun PostScreen(
+    navController: NavController,
+    viewModel: UserViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+) {
     var selectedCategory by remember { mutableStateOf("Lost") }
     var title by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var location by remember { mutableStateOf("") }
     val date = remember { Calendar.getInstance().time.toString() }
     var imageUri by remember { mutableStateOf<Uri?>(null) }
-    val scope = rememberCoroutineScope()
     var isLoading by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
@@ -47,7 +50,7 @@ fun PostScreen(navController: NavController, viewModel: UserViewModel = androidx
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
-        .verticalScroll(rememberScrollState()),
+            .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.Start
     ) {
@@ -96,14 +99,18 @@ fun PostScreen(navController: NavController, viewModel: UserViewModel = androidx
             value = title,
             onValueChange = { title = it },
             label = { Text(" Title") },
-            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp)
         )
 
         OutlinedTextField(
             value = description,
             onValueChange = { description = it },
             label = { Text(" Description") },
-            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp),
             minLines = 3
         )
 
@@ -111,54 +118,50 @@ fun PostScreen(navController: NavController, viewModel: UserViewModel = androidx
             value = location,
             onValueChange = { location = it },
             label = { Text(" Location") },
-            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp)
         )
 
         OutlinedTextField(
             value = date,
             onValueChange = {},
             label = { Text(" Date") },
-            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp),
             enabled = false
         )
 
-        Button(onClick = {
-            imageUri?.let { uri ->
-                val file = uriToFile(context, uri)
-                isLoading = true
-                CloudinaryHelper.uploadImage(file) { success, url ->
-                    if (success && url != null) {
-                        scope.launch {
-                            try {
-                                PostRepo.createPost(
-                                    category = selectedCategory,
-                                    title = title,
-                                    description = description,
-                                    location = location,
-                                    imageUrl = url
-                                )
-                                isLoading = false
-                                viewModel.loadAllPosts()
-                                viewModel.loadMyPosts()
-                                Toast.makeText(context, "Post submitted!", Toast.LENGTH_SHORT).show()
-                                 navController.navigate("userHome"){
-                                     popUpTo("post"){inclusive = true}
-                                 }
-                            }catch (e:Exception){
-                                isLoading = false
-                                Toast.makeText(context, " Error: ${e.message}", Toast.LENGTH_SHORT).show()
+        Button(
+            onClick = {
+                imageUri?.let { uri ->
+                    val file = uriToFile(context, uri)
+                    isLoading = true
+                    viewModel.submitPost(
+                        category = selectedCategory,
+                        title = title,
+                        desc = description,
+                        location = location,
+                        imageFile = file,
+                        onSuccess = {
+                            isLoading = false
+                            Toast.makeText(context, " Post submitted!", Toast.LENGTH_SHORT).show()
+                            navController.navigate(BottomNavItems.Home.route) {
+                                popUpTo(BottomNavItems.Post.route) { inclusive = true }
                             }
+                        },
+                        onError = { msg ->
+                            isLoading = false
+                            Toast.makeText(context, " $msg", Toast.LENGTH_SHORT).show()
                         }
-                    }else{
-                        isLoading = false
-                        Toast.makeText(context, " Image upload failed!", Toast.LENGTH_SHORT).show()
-
-                    }
-
+                    )
+                } ?: run {
+                    Toast.makeText(context, "️ Please select an image", Toast.LENGTH_SHORT).show()
                 }
-            }
 
-        },
+
+            },
             enabled = !isLoading,
             modifier = Modifier
                 .fillMaxWidth(0.6f)
@@ -189,3 +192,4 @@ fun uriToFile(context: Context, uri: Uri): File {
     }
     return file
 }
+

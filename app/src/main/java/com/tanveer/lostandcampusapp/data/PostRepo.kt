@@ -4,13 +4,15 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.tanveer.lostandcampusapp.model.Post
 import kotlinx.coroutines.tasks.await
-
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 
 object PostRepo {
     private val db = FirebaseFirestore.getInstance()
     private val postsCollection = db.collection("posts")
 
-    suspend fun createPost(category: String, title: String, description: String, location: String,imageUrl: String? = null   // 👈 yeh add karo
+    suspend fun createPost(category: String, title: String, description: String, location: String,imageUrl: String? = null
     ) {
         val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
         val postId = postsCollection.document().id
@@ -22,19 +24,34 @@ object PostRepo {
             description = description,
             location = location,
             imageUrl = imageUrl ,
-            timestamp = System.currentTimeMillis().toString(),
+            timestamp = System.currentTimeMillis()
 
         )
         postsCollection.document(postId).set(post).await()
     }
 
-    suspend fun getAllPosts(): List<Post> {
-        return try {
-            postsCollection.get().await().toObjects(Post::class.java)
-        } catch (e: Exception) {
-            emptyList()
+//    suspend fun getAllPosts(): List<Post> {
+//        return try {
+//            postsCollection.get().await().toObjects(Post::class.java)
+//        } catch (e: Exception) {
+//            emptyList()
+//        }
+//    }
+fun getAllPosts(): Flow<List<Post>> = callbackFlow {
+    val listener = postsCollection.addSnapshotListener { snapshot, e ->
+        if (e != null) {
+            trySend(emptyList())
+            return@addSnapshotListener
+        }
+        if (snapshot != null) {
+            val postsList = snapshot.toObjects(Post::class.java)
+            trySend(postsList)
+        } else {
+            trySend(emptyList())
         }
     }
+    awaitClose { listener.remove() }
+}
 
     suspend fun getMyPosts(): List<Post> {
         val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return emptyList()
