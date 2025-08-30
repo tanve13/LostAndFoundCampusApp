@@ -59,11 +59,16 @@ fun HomeScreen( viewModel: UserViewModel,navController: NavController) {
                 .padding(vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            listOf("All","Lost", "Found").forEach { filter ->
+            listOf("All", "Lost", "Found").forEach { filter ->
                 FilterChip(
                     selected = selectedFilter == filter,
                     onClick = { selectedFilter = filter },
-                    label = { Text(filter) },
+                    label = {
+                        Text(
+                            filter,
+                            color = if (selectedFilter == filter) Color.White else Color.Black
+                        )
+                    },
                     colors = FilterChipDefaults.filterChipColors(
                         containerColor = Color.Transparent,
                         selectedContainerColor = Color.Black
@@ -71,6 +76,7 @@ fun HomeScreen( viewModel: UserViewModel,navController: NavController) {
                     border = BorderStroke(1.dp, Color.Black)
                 )
             }
+
         }
         Spacer(modifier = Modifier.height(12.dp))
 
@@ -113,13 +119,12 @@ fun PostCard(post: Post,navController: NavController) {
         shape = RoundedCornerShape(16.dp)
     ) {
         Column {
-            // 🖼 Image section
             AsyncImage(
                 model = post.imageUrl,
                 contentDescription = null,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(200.dp), // fixed image height
+                    .height(200.dp),
                 contentScale = ContentScale.Crop
             )
 
