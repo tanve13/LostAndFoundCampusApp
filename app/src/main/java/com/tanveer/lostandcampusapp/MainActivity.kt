@@ -38,7 +38,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-        @Composable
+    @Composable
     fun AppNavigation() {
         val navController = rememberNavController()
         val currentUser = FirebaseAuth.getInstance().currentUser
@@ -77,7 +77,7 @@ class MainActivity : ComponentActivity() {
                     },
                     onBackToSignUp = {
                         navController.navigate("signup")
-                    },        userViewModel = userViewModel   // ✅ yaha pass karo
+                    }, userViewModel = userViewModel   // ✅ yaha pass karo
 
                 )
             }
@@ -85,7 +85,7 @@ class MainActivity : ComponentActivity() {
             composable("userHome") {
                 val userNavController = rememberNavController()
 
-                MainNavigation(userNavController,rootNavController = navController)
+                MainNavigation(userNavController, rootNavController = navController)
             }
             composable("adminHome") {
                 val adminNavController = rememberNavController()
@@ -100,14 +100,6 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun GreetingPreview() {
     LostAndCampusAppTheme {
-//        val navController = rememberNavController()
-//        Scaffold(
-//            bottomBar = { BottomNavigationBar(navController = navController) }
-//        ) { innerPadding ->
-//            BottomNavigation(
-//                navController = navController,rootNavController: NavHostController,
-//                modifier = Modifier.padding(innerPadding)
-//            )
-//        }
+
     }
 }
