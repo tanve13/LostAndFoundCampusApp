@@ -17,7 +17,7 @@ object AuthRepo {
         regNo: String,
         password: String,
         context: Context,
-        onSuccess: (String, String) -> Unit, // returns (name, regNo)
+        onSuccess: (String, String) -> Unit,
         onError: (String) -> Unit
     ) {
         auth.createUserWithEmailAndPassword(email, password)
