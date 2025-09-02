@@ -79,7 +79,7 @@ class UserViewModel : ViewModel() {
             }
         }
     }
-   //it load post only for user woh posted it like for mypostscreen 
+   //it load post only for user woh posted it like for mypostscreen
     fun loadMyPosts() {
         viewModelScope.launch {
             val posts = PostRepo.getMyPosts(regNo.value)
