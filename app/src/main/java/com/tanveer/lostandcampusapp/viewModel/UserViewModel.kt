@@ -41,8 +41,9 @@ class UserViewModel : ViewModel() {
                 viewModelScope.launch {
                     val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return@launch
                     val post = Post(
+
                         id = UUID.randomUUID().toString(),
-                        userId = regNo.value,
+                        userId = uid,
                         category = category,
                         title = title,
                         description = desc,
@@ -55,8 +56,9 @@ class UserViewModel : ViewModel() {
 
                     FirebaseFirestore.getInstance()
                         .collection("posts")
-                        .document(post.id)
-                        .set(post)
+                        .add(post)
+//                       .document(post.id)
+//                        .set(post)
                         .addOnSuccessListener {
                             loadAllPosts()
                             loadMyPosts()
