@@ -57,9 +57,12 @@ fun ClaimScreen(post: Post, viewModel: UserViewModel, navController: NavControll
         Button(
             onClick = {
                 val currentUserId = viewModel.regNo.value // ya FirebaseAuth.getInstance().currentUser?.uid!!
+                val postOwnerId = post.userId
+
                 viewModel.claimPost(
                     postId = post.id,
                     claimerId = currentUserId,
+                    postOwnerId = postOwnerId,
                     onSuccess = {
                         Toast.makeText(context, "Claimed successfully!", Toast.LENGTH_SHORT).show()
                         navController.popBackStack()

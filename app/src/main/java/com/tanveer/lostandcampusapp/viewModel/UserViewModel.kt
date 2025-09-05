@@ -41,7 +41,6 @@ class UserViewModel : ViewModel() {
                 viewModelScope.launch {
                     val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return@launch
                     val post = Post(
-
                         id = UUID.randomUUID().toString(),
                         userId = uid,
                         category = category,
@@ -56,9 +55,8 @@ class UserViewModel : ViewModel() {
 
                     FirebaseFirestore.getInstance()
                         .collection("posts")
-                        .add(post)
-//                       .document(post.id)
-//                        .set(post)
+                        .document(post.id) // post.id = UUID.randomUUID().toString()
+                        .set(post)
                         .addOnSuccessListener {
                             loadAllPosts()
                             loadMyPosts()
@@ -73,7 +71,8 @@ class UserViewModel : ViewModel() {
             }
         }
     }
-   //it load post for my homescreen
+
+    //it load post for my homescreen
     fun loadAllPosts() {
         viewModelScope.launch {
             PostRepo.getAllPosts().collect { posts ->
@@ -81,7 +80,8 @@ class UserViewModel : ViewModel() {
             }
         }
     }
-   //it load post only for user woh posted it like for mypostscreen
+
+    //it load post only for user woh posted it like for mypostscreen
     fun loadMyPosts() {
         viewModelScope.launch {
             val posts = PostRepo.getMyPosts(regNo.value)
@@ -101,7 +101,8 @@ class UserViewModel : ViewModel() {
     fun claimPost(
         postId: String,
         claimerId: String,
-        onSuccess: () -> Unit,
+        postOwnerId: String,
+        onSuccess: (String) -> Unit,
         onError: (String) -> Unit
     ) {
         viewModelScope.launch {
@@ -110,7 +111,10 @@ class UserViewModel : ViewModel() {
                 db.collection("posts")
                     .document(postId)
                     .update("claimedBy", claimerId)
-                    .addOnSuccessListener { onSuccess() }
+                    .addOnSuccessListener {
+                        val chatId = listOf(claimerId, postOwnerId).sorted().joinToString("_")
+                        onSuccess(chatId)
+                    }
                     .addOnFailureListener { e -> onError(e.message ?: "Error claiming post") }
             } catch (e: Exception) {
                 onError(e.message ?: "Unknown error")

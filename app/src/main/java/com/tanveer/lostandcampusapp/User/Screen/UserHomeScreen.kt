@@ -1,7 +1,7 @@
 package com.tanveer.lostandcampusapp.User.Screen
 
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -14,13 +14,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
-import com.tanveer.lostandcampusapp.R
+import com.google.firebase.auth.FirebaseAuth
 import com.tanveer.lostandcampusapp.model.Post
 import com.tanveer.lostandcampusapp.viewModel.UserViewModel
 import java.text.SimpleDateFormat
@@ -32,7 +32,7 @@ fun HomeScreen( viewModel: UserViewModel,navController: NavController) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedFilter by remember { mutableStateOf("All") }
     val posts by viewModel.allPosts
-
+   val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         viewModel.loadAllPosts()
@@ -103,14 +103,15 @@ fun HomeScreen( viewModel: UserViewModel,navController: NavController) {
         } else {
             LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 items(filteredPosts) { post ->
-                    PostCard(post, navController = navController)
+                    PostCard(post, navController = navController,viewModel = viewModel,context = context)
                 }
             }
         }
     }
 }
 @Composable
-fun PostCard(post: Post,navController: NavController) {
+fun PostCard(post: Post,navController: NavController, viewModel: UserViewModel,
+             context: android.content.Context) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -162,13 +163,27 @@ fun PostCard(post: Post,navController: NavController) {
                         )
                     }
 
-                    Button(
-                        onClick = { navController.navigate("claim/${post.id}") },
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-                    ) {
+                    Button(onClick = {
+                        val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+                        val postOwnerId = post.userId
+                        viewModel.claimPost(
+                            postId = post.id,
+                            claimerId = currentUserId,
+                            postOwnerId = postOwnerId,   // 👈 ye add karo
+                            onSuccess = {
+
+
+                                val chatId = listOf(currentUserId, postOwnerId).sorted().joinToString("_")
+                                navController.navigate("chat/$chatId")
+                            },
+                            onError = { msg ->
+                                Toast.makeText(context, "$msg", Toast.LENGTH_SHORT).show()
+                            }
+                        )
+                    }) {
                         Text("Claim")
                     }
+
                 }
             }
         }

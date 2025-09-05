@@ -17,6 +17,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
+import com.tanveer.lostandcampusapp.User.Screen.ChatScreen
 import com.tanveer.lostandcampusapp.User.Screen.ClaimScreen
 import com.tanveer.lostandcampusapp.User.Screen.HomeScreen
 import com.tanveer.lostandcampusapp.User.Screen.NotificationScreen
@@ -68,6 +69,11 @@ fun BottomNavigation(
                 )
             }
         }
+        composable("chat/{chatId}") { backStackEntry ->
+            val chatId = backStackEntry.arguments?.getString("chatId") ?: ""
+            ChatScreen(chatId = chatId)
+        }
+
     }
 }
 
