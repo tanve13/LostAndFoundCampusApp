@@ -22,7 +22,6 @@ object AuthRepo {
     ) {
         auth.createUserWithEmailAndPassword(email, password)
             .addOnSuccessListener {
-                val uid = auth.currentUser?.uid ?: return@addOnSuccessListener
                 val map = hashMapOf(
                     "name" to name,
                     "email" to email,
@@ -30,7 +29,7 @@ object AuthRepo {
                     "role" to "user"
                 )
                 // Document ID = regNo (easy lookup later)
-                db.collection("users").document(uid)
+                db.collection("users").document(regNo)
                     .set(map)
                     .addOnSuccessListener {
                         onSuccess(name, regNo)
@@ -52,10 +51,9 @@ object AuthRepo {
         onSuccess: (name: String, regNo: String,role: String) -> Unit,
         onError: (String) -> Unit
     ) {
-        db.collection("users").whereEqualTo("regNo", regNo).get()
-            .addOnSuccessListener { docs ->
-                if (!docs.isEmpty) {
-                    val doc = docs.documents[0]
+        db.collection("users").document(regNo).get()
+            .addOnSuccessListener { doc ->
+                if (doc.exists()) {
                     val email = doc.getString("email")
                     val name = doc.getString("name") ?: ""
                     val role = doc.getString("role") ?: "user"

@@ -168,6 +168,8 @@ fun PostCard(post: Post,navController: NavController, viewModel: UserViewModel,
                         Button(onClick = {
                             val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
                             val postOwnerId = post.userId
+                            val safeName = post.userName?.ifBlank { "User" }
+
                             viewModel.claimPost(
                                 postId = post.id,
                                 claimerId = currentUserId,
@@ -175,7 +177,7 @@ fun PostCard(post: Post,navController: NavController, viewModel: UserViewModel,
                                 onSuccess = {
                                     val chatId = listOf(currentUserId, postOwnerId).sorted()
                                         .joinToString("_")
-                                    navController.navigate("chat/$chatId")
+                                    navController.navigate("chat/$chatId/$safeName") // ✅ Navigate with both parameters
                                 },
                                 onError = { msg ->
                                     Toast.makeText(context, "$msg", Toast.LENGTH_SHORT).show()
