@@ -28,21 +28,29 @@ import com.tanveer.lostandcampusapp.viewModel.UserViewModel
 
 @Composable
 fun UserProfileScreen(
-    navController: NavHostController,rootNavController: NavHostController,
+    navController: NavHostController,
+    rootNavController: NavHostController,
     userViewModel: UserViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
 ) {
     val scrollState = rememberScrollState()
-
-    val totalPosts = 0
-    val lostPosts = 0
-    val foundPosts = 0
-    val claimsMade = 0
     val context = LocalContext.current
+
+    // User stats - can be updated later with real data
+    var totalPosts by remember { mutableStateOf(0) }
+    var lostPosts by remember { mutableStateOf(0) }
+    var foundPosts by remember { mutableStateOf(0) }
+    var claimsMade by remember { mutableStateOf(0) }
+
+    // Settings state
+    var notificationsOn by remember { mutableStateOf(true) }
+    var isDarkTheme by remember { mutableStateOf(false) }
+    var isPrivate by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         val (savedName, savedRegNo) = DataStoreManager.getUserData(context)
         userViewModel.setUserData(savedName, savedRegNo)
     }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -51,7 +59,7 @@ fun UserProfileScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
-        // ==== Top Profile Section ====
+        // ===== Top Profile Section =====
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -68,9 +76,7 @@ fun UserProfileScreen(
                         .clip(CircleShape)
                         .background(Color.White)
                 )
-
                 Spacer(Modifier.height(12.dp))
-
                 Text(
                     text = userViewModel.name.value.ifEmpty { "User Name" },
                     style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
@@ -84,7 +90,7 @@ fun UserProfileScreen(
 
         Spacer(Modifier.height(20.dp))
 
-        // ==== Stats Section ====
+        // ===== Stats Section =====
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -99,19 +105,23 @@ fun UserProfileScreen(
 
         Spacer(Modifier.height(24.dp))
 
-
-        // ==== Action Buttons ====
+        // ===== Action Buttons =====
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            OutlinedButton(onClick = { /* TODO Edit Profile */ }) {
+            OutlinedButton(
+                onClick = {
+                    // Show edit profile dialog
+                    EditProfileDialog(userViewModel = userViewModel)
+                }) {
                 Icon(Icons.Default.Edit, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
                 Text("Edit Profile")
             }
+
             Button(
                 onClick = {
                     FirebaseAuth.getInstance().signOut()
@@ -125,12 +135,10 @@ fun UserProfileScreen(
                 Spacer(Modifier.width(8.dp))
                 Text("Logout")
             }
-
         }
 
         Spacer(Modifier.height(24.dp))
 
-        // ==== Extra Sections ====
         Text(
             text = "Settings & Preferences",
             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
@@ -138,24 +146,84 @@ fun UserProfileScreen(
                 .align(Alignment.Start)
                 .padding(horizontal = 16.dp)
         )
-
         Spacer(Modifier.height(8.dp))
 
-        // Example: notifications, privacy, theme settings...
         Card(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant
-            )
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
         ) {
             Column(Modifier.padding(16.dp)) {
-                Text("Notifications: ON")
-                Text("Theme: Light Mode")
-                Text("Privacy: Public")
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Notifications", modifier = Modifier.weight(1f))
+                    Switch(
+                        checked = notificationsOn,
+                        onCheckedChange = { notificationsOn = it }
+                    )
+                }
+                Divider(modifier = Modifier.padding(vertical = 8.dp))
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Dark Theme", modifier = Modifier.weight(1f))
+                    Switch(
+                        checked = isDarkTheme,
+                        onCheckedChange = { isDarkTheme = it }
+                    )
+                }
+                Divider(modifier = Modifier.padding(vertical = 8.dp))
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Privacy", modifier = Modifier.weight(1f))
+                    Switch(
+                        checked = isPrivate,
+                        onCheckedChange = { isPrivate = it }
+                    )
+                }
             }
         }
+    }
+}
+
+@Composable
+fun EditProfileDialog(userViewModel: UserViewModel) {
+    var showDialog by remember { mutableStateOf(true) }
+    var name by remember { mutableStateOf(userViewModel.name.value) }
+    var regNo by remember { mutableStateOf(userViewModel.regNo.value) }
+
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = { Text("Edit Profile") },
+            text = {
+                Column {
+                    OutlinedTextField(
+                        value = name,
+                        onValueChange = { name = it },
+                        label = { Text("Name") }
+                    )
+                    OutlinedTextField(
+                        value = regNo,
+                        onValueChange = { regNo = it },
+                        label = { Text("Registration No") }
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    userViewModel.setUserData(name, regNo)
+                    showDialog = false
+                }) {
+                    Text("Save")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
 
