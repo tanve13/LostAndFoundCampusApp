@@ -162,26 +162,28 @@ fun PostCard(post: Post,navController: NavController, viewModel: UserViewModel,
                             color = Color.Gray
                         )
                     }
+                    val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
 
-                    Button(onClick = {
-                        val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
-                        val postOwnerId = post.userId
-                        viewModel.claimPost(
-                            postId = post.id,
-                            claimerId = currentUserId,
-                            postOwnerId = postOwnerId,   // 👈 ye add karo
-                            onSuccess = {
-
-
-                                val chatId = listOf(currentUserId, postOwnerId).sorted().joinToString("_")
-                                navController.navigate("chat/$chatId")
-                            },
-                            onError = { msg ->
-                                Toast.makeText(context, "$msg", Toast.LENGTH_SHORT).show()
-                            }
-                        )
-                    }) {
-                        Text("Claim")
+                    if (post.userId != currentUserId) {
+                        Button(onClick = {
+                            val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+                            val postOwnerId = post.userId
+                            viewModel.claimPost(
+                                postId = post.id,
+                                claimerId = currentUserId,
+                                postOwnerId = postOwnerId,   // 👈 ye add karo
+                                onSuccess = {
+                                    val chatId = listOf(currentUserId, postOwnerId).sorted()
+                                        .joinToString("_")
+                                    navController.navigate("chat/$chatId")
+                                },
+                                onError = { msg ->
+                                    Toast.makeText(context, "$msg", Toast.LENGTH_SHORT).show()
+                                }
+                            )
+                        }) {
+                            Text("Claim")
+                        }
                     }
 
                 }

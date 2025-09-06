@@ -83,8 +83,9 @@ class UserViewModel : ViewModel() {
 
     //it load post only for user woh posted it like for mypostscreen
     fun loadMyPosts() {
+        val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
         viewModelScope.launch {
-            val posts = PostRepo.getMyPosts(regNo.value)
+            val posts = PostRepo.getMyPosts(uid)
             myPosts.value = posts
         }
     }

@@ -69,10 +69,18 @@ fun BottomNavigation(
                 )
             }
         }
-        composable("chat/{chatId}") { backStackEntry ->
+        composable(
+            route = "chat/{chatId}/{postOwnerName}",
+            arguments = listOf(
+                navArgument("chatId") { type = NavType.StringType },
+                navArgument("postOwnerName") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
             val chatId = backStackEntry.arguments?.getString("chatId") ?: ""
-            ChatScreen(chatId = chatId)
+            val postOwnerName = backStackEntry.arguments?.getString("postOwnerName") ?: "User"
+            ChatScreen(chatId = chatId, postOwnerName = postOwnerName)
         }
+
 
     }
 }
@@ -109,8 +117,15 @@ fun BottomNavigationBar(navController: NavHostController) {
 
 @Composable
 fun MainNavigation(navController: NavHostController, rootNavController: NavHostController) {
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+
     Scaffold(
-        bottomBar = { BottomNavigationBar(navController) }
+        bottomBar = {
+            if (currentRoute?.startsWith("chat") == false) {
+                BottomNavigationBar(navController)
+            }
+        }
     ) { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding)) {
             BottomNavigation(navController, rootNavController)

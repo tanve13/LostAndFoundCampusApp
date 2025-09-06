@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -18,8 +19,9 @@ data class Message(
     val timestamp: Long = 0
 )
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChatScreen(chatId: String) {
+fun ChatScreen(chatId: String,postOwnerName:String) {
     val db = FirebaseFirestore.getInstance()
     val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
 
@@ -41,46 +43,63 @@ fun ChatScreen(chatId: String) {
             }
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        // 🔹 Messages list
-        LazyColumn(
-            modifier = Modifier.weight(1f).padding(8.dp)
-        ) {
-            items(messages) { msg ->
-                MessageItem(msg = msg, isMine = msg.senderId == currentUserId)
-            }
-        }
-
-        // 🔹 Text input and Send button
-        Row(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
-            OutlinedTextField(
-                value = newMessage,
-                onValueChange = { newMessage = it },
-                modifier = Modifier.weight(1f),
-                placeholder = { Text("Type a message...") }
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(postOwnerName) }
             )
-            Button(
-                onClick = {
-                    if (newMessage.isNotBlank()) {
-                        val message = mapOf(
-                            "senderId" to currentUserId,
-                            "text" to newMessage,
-                            "timestamp" to System.currentTimeMillis()
-                        )
-                        db.collection("chats")
-                            .document(chatId)
-                            .collection("messages")
-                            .add(message)
-                            .addOnSuccessListener { newMessage = "" }
-                    }
-                },
-                modifier = Modifier.padding(start = 8.dp)
+        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            LazyColumn(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(8.dp)
             ) {
-                Text("Send")
+                items(messages) { msg ->
+                    MessageItem(msg = msg, isMine = msg.senderId == currentUserId)
+                }
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp)
+            ) {
+                OutlinedTextField(
+                    value = newMessage,
+                    onValueChange = { newMessage = it },
+                    modifier = Modifier.weight(1f),
+                    placeholder = { Text("Type a message...") }
+                )
+                Button(
+                    onClick = {
+                        if (newMessage.isNotBlank()) {
+                            val message = mapOf(
+                                "senderId" to currentUserId,
+                                "text" to newMessage,
+                                "timestamp" to System.currentTimeMillis()
+                            )
+                            db.collection("chats")
+                                .document(chatId)
+                                .collection("messages")
+                                .add(message)
+                                .addOnSuccessListener { newMessage = "" }
+                        }
+                    },
+                    modifier = Modifier.padding(start = 8.dp)
+                ) {
+                    Text("Send")
+                }
             }
         }
     }
 }
+
 
 @Composable
 fun MessageItem(msg: Message, isMine: Boolean) {
@@ -89,14 +108,14 @@ fun MessageItem(msg: Message, isMine: Boolean) {
         horizontalArrangement = if (isMine) Arrangement.End else Arrangement.Start
     ) {
         Surface(
-            color = if (isMine) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
+            color = if (isMine) MaterialTheme.colorScheme.primary else Color.LightGray,
             shape = MaterialTheme.shapes.medium,
             modifier = Modifier.padding(4.dp)
         ) {
             Text(
                 text = msg.text,
                 modifier = Modifier.padding(8.dp),
-                color = MaterialTheme.colorScheme.onPrimary
+                color = if (isMine) Color.White else Color.Black
             )
         }
     }
