@@ -3,26 +3,19 @@ package com.tanveer.lostandcampusapp
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.google.firebase.auth.FirebaseAuth
-import com.tanveer.lostandcampusapp.Admin.AdminScreens.AdminHomeScreen
 import com.tanveer.lostandcampusapp.Admin.navigation.AdminNavigation
-import com.tanveer.lostandcampusapp.User.navigation.BottomNavigation
-import com.tanveer.lostandcampusapp.User.navigation.BottomNavigationBar
 import com.tanveer.lostandcampusapp.User.navigation.MainNavigation
 import com.tanveer.lostandcampusapp.ui.theme.LostAndCampusAppTheme
 import com.tanveer.lostandcampusapp.viewModel.UserViewModel
@@ -32,14 +25,21 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            LostAndCampusAppTheme {
-                AppNavigation()
+            val systemTheme = isSystemInDarkTheme()
+            var isDarkTheme by remember { mutableStateOf(systemTheme) }
+
+            LostAndCampusAppTheme(darkTheme = isDarkTheme) {
+                AppNavigation(
+                    isDarkTheme = isDarkTheme,
+                    onThemeChange = { isDarkTheme = it }
+                )
             }
         }
     }
 
     @Composable
-    fun AppNavigation() {
+    fun AppNavigation( isDarkTheme: Boolean,
+                       onThemeChange: (Boolean) -> Unit) {
         val navController = rememberNavController()
         val currentUser = FirebaseAuth.getInstance().currentUser
 
@@ -77,7 +77,7 @@ class MainActivity : ComponentActivity() {
                     },
                     onBackToSignUp = {
                         navController.navigate("signup")
-                    }, userViewModel = userViewModel   // ✅ yaha pass karo
+                    }, userViewModel = userViewModel
 
                 )
             }
@@ -85,7 +85,9 @@ class MainActivity : ComponentActivity() {
             composable("userHome") {
                 val userNavController = rememberNavController()
 
-                MainNavigation(userNavController, rootNavController = navController)
+                MainNavigation(userNavController, rootNavController = navController,
+                    isDarkTheme = isDarkTheme,
+                    onThemeChange = onThemeChange)
             }
             composable("adminHome") {
                 val adminNavController = rememberNavController()

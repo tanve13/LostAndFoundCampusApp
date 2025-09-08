@@ -31,6 +31,8 @@ import com.tanveer.lostandcampusapp.viewModel.UserViewModel
 fun BottomNavigation(
     navController: NavHostController,
     rootNavController: NavHostController,
+    isDarkTheme: Boolean,
+    onThemeChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val userViewModel: UserViewModel = viewModel()
@@ -50,8 +52,13 @@ fun BottomNavigation(
             NotificationScreen()
         }
         composable(BottomNavItems.Profile.route) {
-            UserProfileScreen(navController = navController, rootNavController = rootNavController)
+            UserProfileScreen(
+                rootNavController = rootNavController,
+                isDarkTheme = isDarkTheme,   // <- from your parent state
+                onThemeChange =   onThemeChange  // <- update parent state
+            )
         }
+
         composable(
             route = "claim/{postId}",
             arguments = listOf(navArgument("postId") { type = NavType.StringType })
@@ -116,7 +123,9 @@ fun BottomNavigationBar(navController: NavHostController) {
 }
 
 @Composable
-fun MainNavigation(navController: NavHostController, rootNavController: NavHostController) {
+fun MainNavigation(navController: NavHostController, rootNavController: NavHostController,
+                   isDarkTheme: Boolean,
+                   onThemeChange: (Boolean) -> Unit) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
@@ -128,7 +137,9 @@ fun MainNavigation(navController: NavHostController, rootNavController: NavHostC
         }
     ) { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding)) {
-            BottomNavigation(navController, rootNavController)
+            BottomNavigation(navController, rootNavController,
+                isDarkTheme = isDarkTheme,
+                onThemeChange = onThemeChange)
         }
     }
 }
