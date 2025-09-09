@@ -11,16 +11,15 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.Color
 import com.github.mikephil.charting.charts.LineChart
 import com.github.mikephil.charting.components.Description
+import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.data.LineDataSet
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.ui.viewinterop.AndroidView
 import com.github.mikephil.charting.data.LineData
+import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
+import androidx.compose.ui.viewinterop.AndroidView
 
 @Composable
 fun AdminHomeScreen() {
-
     // TODO: Replace static values with ViewModel/Firebase data
     val totalPosts = 120
     val lostPosts = 70
@@ -33,7 +32,6 @@ fun AdminHomeScreen() {
             .fillMaxSize()
             .padding(16.dp)
     ) {
-
         Text(
             text = "Admin Dashboard",
             style = MaterialTheme.typography.titleLarge.copy(
@@ -112,24 +110,53 @@ fun ActivityLineChart(data: List<Int>, labels: List<String>) {
     AndroidView(
         factory = { context ->
             LineChart(context).apply {
+                // Create entries
                 val entries = data.mapIndexed { index, value ->
-                    DropBoxManager.Entry(
-                        index.toFloat().toString(),
-                        value.toFloat().toLong()
-                    )
+                    Entry(index.toFloat(), value.toFloat())
                 }
+
+                // Create dataset
                 val dataSet = LineDataSet(entries, "Posts").apply {
                     color = android.graphics.Color.BLUE
                     valueTextColor = android.graphics.Color.BLACK
                     lineWidth = 2f
                     circleRadius = 4f
                     setCircleColor(android.graphics.Color.BLUE)
+                    mode = LineDataSet.Mode.CUBIC_BEZIER
+                    setDrawValues(true)
                 }
 
+                // Set data
                 this.data = LineData(dataSet)
-                this.description = EventLogTags.Description().apply { text = "" }
-                this.axisRight.isEnabled = false
-                this.xAxis.granularity = 1f
+
+                // Configure description
+                description = Description().apply {
+                    text = "Weekly Posts Activity"
+                    textSize = 12f
+                }
+
+                // Configure axes
+                axisRight.isEnabled = false
+
+                // Configure X-axis
+                xAxis.apply {
+                    position = XAxis.XAxisPosition.BOTTOM
+                    valueFormatter = IndexAxisValueFormatter(labels)
+                    granularity = 1f
+                    setDrawGridLines(false)
+                }
+
+                // Configure Y-axis
+                axisLeft.apply {
+                    axisMinimum = 0f
+                    granularity = 1f
+                }
+
+                // Animate the chart
+                animateXY(1000, 1000)
+
+                // Refresh the chart
+                invalidate()
             }
         },
         modifier = Modifier

@@ -17,6 +17,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
+import com.google.firebase.auth.FirebaseAuth
 import com.tanveer.lostandcampusapp.User.Screen.ChatScreen
 import com.tanveer.lostandcampusapp.User.Screen.ClaimScreen
 import com.tanveer.lostandcampusapp.User.Screen.HomeScreen
@@ -49,7 +50,11 @@ fun BottomNavigation(
         }
 
         composable(BottomNavItems.Notification.route) {
-            NotificationScreen()
+            val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+            NotificationScreen(
+                userId = userId,
+                viewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+            )
         }
         composable(BottomNavItems.Profile.route) {
             UserProfileScreen(

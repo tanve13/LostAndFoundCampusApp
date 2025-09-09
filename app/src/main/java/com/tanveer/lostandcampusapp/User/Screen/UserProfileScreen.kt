@@ -36,22 +36,22 @@ fun UserProfileScreen(
 ) {
     val scrollState = rememberScrollState()
     val context = LocalContext.current
-
+    val coroutineScope = rememberCoroutineScope()
     var showLogoutDialog by remember { mutableStateOf(false) }
     var showChangePasswordDialog by remember { mutableStateOf(false) }
     var showEditProfileDialog by remember { mutableStateOf(false) }
-
-    // Stats placeholders (later bind to Firestore if needed)
-    val totalPosts = 0
-    val lostPosts = 0
-    val foundPosts = 0
-    val claimsMade = 0
+    val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
 
     // Load user data from DataStore
     LaunchedEffect(Unit) {
         val (savedName, savedRegNo) = DataStoreManager.getUserData(context)
         userViewModel.setUserData(savedName, savedRegNo)
+        // Fetch user stats
+        if (currentUserId.isNotEmpty()) {
+            userViewModel.fetchUserStats(currentUserId)
+        }
     }
+    val userStats by userViewModel.userStats.collectAsState()
 
     Column(
         modifier = Modifier
@@ -101,10 +101,10 @@ fun UserProfileScreen(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceAround
         ) {
-            StatCard("Total", totalPosts)
-            StatCard("Lost", lostPosts)
-            StatCard("Found", foundPosts)
-            StatCard("Claims", claimsMade)
+            StatCard("Total", userStats.totalPosts)
+            StatCard("Lost", userStats.lostPosts)
+            StatCard("Found", userStats.foundPosts)
+            StatCard("Claims", userStats.claimsMade)
         }
 
         Spacer(modifier = Modifier.height(24.dp))

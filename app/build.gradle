@@ -68,6 +68,9 @@ dependencies {
     //material3
     implementation "androidx.compose.ui:ui:1.6.1"
     implementation "androidx.compose.material3:material3:1.2.0"
+    //material
+    implementation "androidx.compose.material:material:1.6.1"
+
     //image upload ke leiia and image show krne ke liyea
     implementation "io.coil-kt:coil-compose:2.5.0"
     //visibility password ke leiya
@@ -77,6 +80,7 @@ dependencies {
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")
     implementation("com.google.firebase:firebase-firestore-ktx")
+    implementation "com.google.firebase:firebase-firestore-ktx:25.1.0"
     implementation "androidx.datastore:datastore-preferences:1.0.0"
    //cloudnery
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
@@ -84,7 +88,9 @@ dependencies {
    //chart ke liya
     implementation "com.github.PhilJay:MPAndroidChart:v3.1.0"
 
-    
+    implementation("com.google.dagger:hilt-android:2.51.1")
+
+
 
 }
 apply plugin: 'com.google.gms.google-services'
