@@ -120,14 +120,14 @@ fun LoginScreen(
                             regNo = regNo,
                             password = password,
                             context = context,
-                            onSuccess = { nameFromDb, regNoFromDb,role ->
+                            onSuccess = { name, regNo,role ->
                                 onLoginSuccess(role)
                                 Toast.makeText(context, "Login Successful!", Toast.LENGTH_SHORT).show()
+                                userViewModel.setUserData(name, regNo)
 
                                 CoroutineScope(Dispatchers.IO).launch {
-                                    DataStoreManager.saveUserData(context, nameFromDb, regNoFromDb)
+                                    DataStoreManager.saveUserData(context, name, regNo)
                                 }
-                                userViewModel.setUserData(nameFromDb, regNoFromDb)
 
                             },
                             onError = { msg ->

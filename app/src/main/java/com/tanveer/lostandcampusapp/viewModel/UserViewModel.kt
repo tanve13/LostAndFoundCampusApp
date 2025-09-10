@@ -163,14 +163,19 @@ class UserViewModel : ViewModel() {
             userId = null,
             isRead = false
         )
+       Log.d("NotificationDebug", "Trying to add notification: $notification")
 
         firestore.collection("notifications")
             .add(notification)
             .addOnSuccessListener {
                 println("Notification added successfully")
+                Log.d("NotificationDebug", "Notification added successfully with id: ${it.id}")
+
             }
             .addOnFailureListener {
                 println("Error adding notification: ${it.message}")
+                Log.e("NotificationDebug", "Error adding notification: ${it.message}")
+
             }
     }
     fun observeUserNotifications(userId: String) {
@@ -189,4 +194,11 @@ class UserViewModel : ViewModel() {
             .document(notificationId)
             .delete()
     }
+    //notification read krne vla
+    fun markNotificationAsRead(notificationId: String) {
+        firestore.collection("notifications")
+            .document(notificationId)
+            .update("isRead", true)
+    }
+
 }

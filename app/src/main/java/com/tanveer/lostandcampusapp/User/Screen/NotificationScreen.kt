@@ -1,8 +1,14 @@
 package com.tanveer.lostandcampusapp.User.Screen
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.DismissDirection
+import androidx.compose.material.DismissValue
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.SwipeToDismiss
+import androidx.compose.material.rememberDismissState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -13,10 +19,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tanveer.lostandcampusapp.model.NotificationDataClass
 import com.tanveer.lostandcampusapp.viewModel.UserViewModel
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.rememberDismissState
-import androidx.compose.material.SwipeToDismiss
-import androidx.compose.material.DismissDirection
+
+
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -67,10 +71,19 @@ fun NotificationScreen(
                             notificationToDelete = notification
                             showDialog = true
                         },
-                        content = {
-                            NotificationCard(notification = notification)
+                        onCancel = {
+                            showDialog = false
                         }
-                    )
+                    ){
+                        NotificationCard(notification = notification) { clickedNotif ->
+                            scope.launch {
+                                viewModel.markNotificationAsRead(clickedNotif.id)
+                            }
+                            clickedNotif.postId?.let {
+                                navController.navigate("postDetail/$it")
+                            }
+                        }
+                    }
 
                     if (showDialog) {
                         AlertDialog(
@@ -99,53 +112,78 @@ fun NotificationScreen(
         }
     }
 }
-
 @Composable
-fun NotificationCard(notification: NotificationDataClass) {
+fun NotificationCard(
+    notification: NotificationDataClass,
+    onClick: (NotificationDataClass) -> Unit
+) {
     val backgroundColor =
-        if (notification.isRead) MaterialTheme.colorScheme.surface
-        else MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+        if (notification.isRead) MaterialTheme.colorScheme.surfaceVariant
+        else MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp)
+            .clickable { onClick(notification) },
         colors = CardDefaults.cardColors(containerColor = backgroundColor),
-        elevation = CardDefaults.cardElevation(2.dp)
+        shape = MaterialTheme.shapes.medium,
+        border = CardDefaults.outlinedCardBorder()
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 text = notification.title,
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
+                fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = notification.message,
                 style = MaterialTheme.typography.bodyMedium
             )
-            Spacer(modifier = Modifier.height(6.dp))
-            Text(
-                text = "Type: ${notification.type}",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.outline
-            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = "Type: ${notification.type}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.outline
+                )
+                Text(
+                    text = android.text.format.DateFormat.format(
+                        "dd MMM, hh:mm a",
+                        notification.timestamp
+                    ).toString(),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.outline
+                )
+            }
         }
     }
 }
-@OptIn(ExperimentalMaterialApi::class)
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
 @Composable
 fun SwipeToDismissBox(
     onDismissed: () -> Unit,
+    onCancel: () -> Unit,
     content: @Composable () -> Unit
 ) {
-    val dismissState = rememberDismissState()
-
-    if (dismissState.isDismissed(DismissDirection.EndToStart)) {
-        onDismissed()
-    }
+    val dismissState = rememberDismissState(
+        confirmValueChange = { dismissValue ->
+            if (dismissValue == DismissValue.DismissedToStart) {
+                onDismissed()
+                false // swipe reset ho jaye agar cancel ya confirm na ho
+            } else {
+                true
+            }
+        }
+    )
 
     SwipeToDismiss(
         state = dismissState,
-        directions = setOf(DismissDirection.EndToStart),
         background = {
             Box(
                 modifier = Modifier
@@ -156,10 +194,19 @@ fun SwipeToDismissBox(
                 Text("Delete", color = Color.Red)
             }
         },
-        dismissContent = {
-            content()
-        }
+        directions = setOf(DismissDirection.EndToStart),
+        dismissContent = { content() }
     )
+
+    // Cancel pe dismissState ko reset karna
+    LaunchedEffect(Unit) {
+        if (dismissState.currentValue != DismissValue.Default) {
+            onCancel()
+            dismissState.reset()
+        }
+    }
 }
+
+
 
 
