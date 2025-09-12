@@ -90,8 +90,7 @@ dependencies {
     implementation "com.github.PhilJay:MPAndroidChart:v3.1.0"
 
     implementation("com.google.dagger:hilt-android:2.51.1")
-
-
-
+    //for notification fcm
+    implementation "com.google.firebase:firebase-messaging-ktx:23.1.2"
 }
 apply plugin: 'com.google.gms.google-services'

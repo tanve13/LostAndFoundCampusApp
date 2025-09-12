@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.messaging.FirebaseMessaging
 import com.tanveer.lostandcampusapp.data.PostRepo
 import com.tanveer.lostandcampusapp.data.StatsRepository
 import com.tanveer.lostandcampusapp.data.UserStats
@@ -14,7 +15,15 @@ import com.tanveer.lostandcampusapp.model.Post
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import okhttp3.Call
+import okhttp3.Callback
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.Response
 import java.io.File
+import java.io.IOException
 import java.util.UUID
 
 class UserViewModel : ViewModel() {
@@ -177,7 +186,53 @@ class UserViewModel : ViewModel() {
                 Log.e("NotificationDebug", "Error adding notification: ${it.message}")
 
             }
+       // 2. Firestore se sab users ke FCM tokens fetch karo aur push bhejo
+       firestore.collection("users").get().addOnSuccessListener { snapshot ->
+           for (doc in snapshot.documents) {
+               val token = doc.getString("fcmToken")
+               if (!token.isNullOrEmpty()) {
+                   sendFCMNotification(token, title, message) // helper call
+               }
+           }
+       }.addOnFailureListener { e ->
+           Log.e("NotificationDebug", "Error fetching users: ${e.message}")
+       }
     }
+    private fun sendFCMNotification(token: String, title: String, message: String) {
+        val serverKey = "YOUR_SERVER_KEY" // Firebase Console -> Project Settings -> Cloud Messaging -> Server key
+        val url = "https://fcm.googleapis.com/fcm/send"
+
+        val json = """
+        {
+          "to": "$token",
+          "notification": {
+            "title": "$title",
+            "body": "$message"
+          }
+        }
+    """.trimIndent()
+
+        val client = OkHttpClient()
+        val requestBody = json.toRequestBody("application/json; charset=utf-8".toMediaType())
+        val request = Request.Builder()
+            .url(url)
+            .post(requestBody)
+            .addHeader("Authorization", "key=$serverKey")
+            .addHeader("Content-Type", "application/json")
+            .build()
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                Log.e("FCM", "Error sending FCM: ${e.message}")
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                Log.d("FCM", "FCM sent: ${response.body?.string()}")
+            }
+        })
+    }
+
+
     fun observeUserNotifications(userId: String) {
         firestore.collection("notifications")
             .addSnapshotListener { snapshot, _ ->
@@ -200,5 +255,24 @@ class UserViewModel : ViewModel() {
             .document(notificationId)
             .update("isRead", true)
     }
-
+    fun saveUserToken() {
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                val token = task.result
+                val uid = FirebaseAuth.getInstance().currentUser?.uid
+                if (uid != null) {
+                    FirebaseFirestore.getInstance()
+                        .collection("users")
+                        .document(uid)
+                        .update("fcmToken", token)
+                        .addOnSuccessListener {
+                            Log.d("FCM", "Token saved: $token")
+                        }
+                        .addOnFailureListener { e ->
+                            Log.e("FCM", "Error saving token: ${e.message}")
+                        }
+                }
+            }
+        }
+    }
 }
