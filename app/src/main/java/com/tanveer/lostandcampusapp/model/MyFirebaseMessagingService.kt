@@ -14,7 +14,6 @@ import com.tanveer.lostandcampusapp.R
 class MyFirebaseMessagingService : FirebaseMessagingService() {
 
         override fun onMessageReceived(remoteMessage: RemoteMessage) {
-            // Jab push notification aaye
             remoteMessage.notification?.let {
                 showNotification(it.title, it.body)
             }
@@ -25,7 +24,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             val notificationManager =
                 getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-            // Channel create for Android O+
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 val channel = NotificationChannel(
                     channelId,
