@@ -53,12 +53,13 @@ fun BottomNavigation(
             val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
             NotificationScreen(
                 userId = userId,
+                navController = navController,
                 viewModel = androidx.lifecycle.viewmodel.compose.viewModel()
             )
         }
         composable(BottomNavItems.Profile.route) {
             UserProfileScreen(
-                rootNavController = rootNavController,
+                navController = navController,
                 isDarkTheme = isDarkTheme,   // <- from your parent state
                 onThemeChange =   onThemeChange  // <- update parent state
             )

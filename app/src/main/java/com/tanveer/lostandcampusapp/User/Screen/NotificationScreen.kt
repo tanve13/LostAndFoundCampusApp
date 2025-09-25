@@ -17,6 +17,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 import com.tanveer.lostandcampusapp.model.NotificationDataClass
 import com.tanveer.lostandcampusapp.viewModel.UserViewModel
 
@@ -27,6 +29,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun NotificationScreen(
     userId: String,
+    navController : NavController,
     viewModel: UserViewModel = viewModel()
 ) {
     val notifications by viewModel.notifications.collectAsState()
@@ -164,48 +167,43 @@ fun NotificationCard(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SwipeToDismissBox(
     onDismissed: () -> Unit,
     onCancel: () -> Unit,
     content: @Composable () -> Unit
 ) {
-    val dismissState = rememberDismissState(
-        confirmValueChange = { dismissValue ->
-            if (dismissValue == DismissValue.DismissedToStart) {
+    val state = rememberSwipeToDismissBoxState(
+        confirmValueChange = { value ->
+            if (value == SwipeToDismissBoxValue.EndToStart) {
                 onDismissed()
-                false // swipe reset ho jaye agar cancel ya confirm na ho
-            } else {
-                true
-            }
+                false
+            } else true
         }
     )
 
-    SwipeToDismiss(
-        state = dismissState,
-        background = {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                contentAlignment = Alignment.CenterEnd
-            ) {
-                Text("Delete", color = Color.Red)
+    SwipeToDismissBox(
+        state = state,
+        enableDismissFromStartToEnd = false,
+        backgroundContent = {
+            Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
+                Text("Delete", color = MaterialTheme.colorScheme.error)
+                Spacer(Modifier.width(16.dp))
             }
         },
-        directions = setOf(DismissDirection.EndToStart),
-        dismissContent = { content() }
+        content = { content() }
     )
 
-    // Cancel pe dismissState ko reset karna
-    LaunchedEffect(Unit) {
-        if (dismissState.currentValue != DismissValue.Default) {
+    // Reset on cancel: call this when dialog dismissed without delete
+    LaunchedEffect(state.currentValue) {
+        if (state.currentValue != SwipeToDismissBoxValue.Settled) {
             onCancel()
-            dismissState.reset()
+            state.reset()
         }
     }
 }
+
 
 
 

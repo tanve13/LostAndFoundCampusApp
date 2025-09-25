@@ -1,5 +1,6 @@
 package com.tanveer.lostandcampusapp.viewModel
 
+import android.net.Uri
 import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -29,14 +30,23 @@ import java.util.UUID
 class UserViewModel : ViewModel() {
     var name = mutableStateOf("")
     var regNo = mutableStateOf("")
+    //posts ke leia
     var allPosts = mutableStateOf<List<Post>>(emptyList())
     var myPosts = mutableStateOf<List<Post>>(emptyList())
+    //userstats
     private val _userStats = MutableStateFlow(UserStats())
     val userStats: StateFlow<UserStats> = _userStats
+    var profileImageUrl = mutableStateOf("")
     private val statsRepository = StatsRepository()
+    var bio = mutableStateOf("")
+    fun setBio(newBio: String) { bio.value = newBio }
+
+    //firebase
     private val firestore = FirebaseFirestore.getInstance()
+    //notifications
     val _notifications = MutableStateFlow<List<NotificationDataClass>>(emptyList())
     val notifications: StateFlow<List<NotificationDataClass>> = _notifications
+
     fun setUserData(userName: String, userReg: String) {
         name.value = userName
         regNo.value = userReg
@@ -52,7 +62,9 @@ class UserViewModel : ViewModel() {
             }
         }
     }
-  ///je jab user post submit krega jab
+
+
+    ///je jab user post submit krega jab
     fun submitPost(
         category: String,
         title: String,
