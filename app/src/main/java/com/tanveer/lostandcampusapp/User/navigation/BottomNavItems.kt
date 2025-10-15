@@ -16,7 +16,6 @@ sealed class BottomNavItems(
     object Home : BottomNavItems("userHome", Icons.Default.Home, "Home")
     object MyPost : BottomNavItems("myPost", Icons.AutoMirrored.Filled.List, "My Post")
     object Post : BottomNavItems("Post", Icons.Default.Add, "Post")
-    object Notification :
-        BottomNavItems("notification", Icons.Default.Notifications, "Notification")
+    object Notification :BottomNavItems("notification", Icons.Default.Notifications, "Notification")
     object Profile : BottomNavItems("Profile", Icons.Default.Person, "Profile")
 }

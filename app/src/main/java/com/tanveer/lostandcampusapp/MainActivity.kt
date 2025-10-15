@@ -5,11 +5,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -18,6 +16,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.tanveer.lostandcampusapp.Admin.navigation.AdminNavigation
 import com.tanveer.lostandcampusapp.User.navigation.MainNavigation
 import com.tanveer.lostandcampusapp.ui.theme.LostAndCampusAppTheme
+import com.tanveer.lostandcampusapp.ui.theme.ThemePreference
 import com.tanveer.lostandcampusapp.viewModel.UserViewModel
 
 class MainActivity : ComponentActivity() {
@@ -25,13 +24,15 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            val systemTheme = isSystemInDarkTheme()
-            var isDarkTheme by remember { mutableStateOf(systemTheme) }
+//            val systemTheme = isSystemInDarkTheme()
+            val context = LocalContext.current
 
+            val isDarkTheme by ThemePreference.getTheme(context = context)
+                .collectAsState(initial = false)
             LostAndCampusAppTheme(darkTheme = isDarkTheme) {
                 AppNavigation(
                     isDarkTheme = isDarkTheme,
-                    onThemeChange = { isDarkTheme = it }
+                    onThemeChange = { isDarkTheme  }
                 )
             }
         }
@@ -97,11 +98,11 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    LostAndCampusAppTheme {
-
-    }
-}
+//
+//@Preview(showBackground = true)
+//@Composable
+//fun GreetingPreview() {
+//    LostAndCampusAppTheme {
+//
+//    }
+//}

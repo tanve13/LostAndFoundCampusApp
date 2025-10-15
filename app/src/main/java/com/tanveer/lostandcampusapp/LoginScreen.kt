@@ -124,7 +124,6 @@ fun LoginScreen(
                                 onLoginSuccess(role)
                                 Toast.makeText(context, "Login Successful!", Toast.LENGTH_SHORT).show()
                                 userViewModel.setUserData(name, regNo)
-                                userViewModel.saveUserToken()
 
                                 CoroutineScope(Dispatchers.IO).launch {
                                     DataStoreManager.saveUserData(context, name, regNo)

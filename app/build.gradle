@@ -92,5 +92,8 @@ dependencies {
     implementation("com.google.dagger:hilt-android:2.51.1")
     //for notification fcm
     implementation "com.google.firebase:firebase-messaging-ktx:23.1.2"
+    //onesignal
+    implementation 'com.onesignal:OneSignal:5.1.36'
+
 }
 apply plugin: 'com.google.gms.google-services'

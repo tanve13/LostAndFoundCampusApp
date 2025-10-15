@@ -1,13 +1,16 @@
 package com.tanveer.lostandcampusapp.viewModel
 
+import android.content.Context
 import android.net.Uri
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.messaging.FirebaseMessaging
+import com.tanveer.lostandcampusapp.data.DataStoreManager
+import com.tanveer.lostandcampusapp.data.FileUtils
 import com.tanveer.lostandcampusapp.data.PostRepo
 import com.tanveer.lostandcampusapp.data.StatsRepository
 import com.tanveer.lostandcampusapp.data.UserStats
@@ -16,6 +19,7 @@ import com.tanveer.lostandcampusapp.model.Post
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.MediaType.Companion.toMediaType
@@ -30,37 +34,133 @@ import java.util.UUID
 class UserViewModel : ViewModel() {
     var name = mutableStateOf("")
     var regNo = mutableStateOf("")
+    var bio = mutableStateOf("")
+    var profileImageUrl = mutableStateOf("")
+
     //posts ke leia
     var allPosts = mutableStateOf<List<Post>>(emptyList())
     var myPosts = mutableStateOf<List<Post>>(emptyList())
+
     //userstats
     private val _userStats = MutableStateFlow(UserStats())
     val userStats: StateFlow<UserStats> = _userStats
-    var profileImageUrl = mutableStateOf("")
     private val statsRepository = StatsRepository()
-    var bio = mutableStateOf("")
-    fun setBio(newBio: String) { bio.value = newBio }
 
     //firebase
     private val firestore = FirebaseFirestore.getInstance()
+    private val db = FirebaseFirestore.getInstance()
+
     //notifications
     val _notifications = MutableStateFlow<List<NotificationDataClass>>(emptyList())
     val notifications: StateFlow<List<NotificationDataClass>> = _notifications
 
-    fun setUserData(userName: String, userReg: String) {
+    fun setUserData(userName: String, userReg: String,userBio: String = "") {
         name.value = userName
         regNo.value = userReg
+        bio.value = userBio
+        updateUserProfileField("name", userName)
+        updateUserProfileField("regNo", userReg)
     }
-
-    //je user ke stats ke leia hai function
-    fun fetchUserStats(userId: String) {
+    fun saveUserToDataStore(context: Context) {
         viewModelScope.launch {
-            try {
-                _userStats.value = statsRepository.getUserStats(userId)
-            } catch (e: Exception) {
-                // Handle error (optional)
+            DataStoreManager.saveUserData(context, name.value, regNo.value)
+        }
+    }
+    fun loadUserFromDataStore(context: Context) {
+        viewModelScope.launch {
+            val (storedName, storedReg) = DataStoreManager.getUserData(context)
+            if (storedName.isNotEmpty() && storedReg.isNotEmpty()) {
+                name.value = storedName
+                regNo.value = storedReg
+                fetchUserProfile(storedReg)
             }
         }
+    }
+    fun fetchUserProfile(userRegNo: String) {
+        viewModelScope.launch {
+            try {
+                val doc = db.collection("users").document(userRegNo).get().await()
+                if (doc.exists()) {
+                    name.value = doc.getString("name") ?: ""
+                    regNo.value = doc.getString("regNo") ?: ""
+                    bio.value = doc.getString("bio") ?: ""
+                    profileImageUrl.value = doc.getString("profileImageUrl") ?: ""
+                }
+                fetchUserStats(userRegNo)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+    // --- Fetch stats ---
+    fun fetchUserStats(userRegNo: String) {
+        viewModelScope.launch {
+            try {
+                _userStats.value = statsRepository.getUserStats(userRegNo)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+    // 🧠 Update Firestore user profile data
+    private fun updateUserProfileField(field: String, value: Any) {
+        val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        firestore.collection("users").document(uid)
+            .update(field, value)
+            .addOnFailureListener { Log.e("UserViewModel", "Failed to update $field: ${it.message}") }
+    }
+    // ✨ Profile Image Upload (from gallery)
+    fun uploadProfileImageToCloudinary(
+        context: Context,
+        imageUri: Uri,
+        onSuccess: () -> Unit = {},
+        onError: (String) -> Unit = {}
+    ) {
+        val file = FileUtils.getFileFromUri(context, imageUri)
+        if (file == null) {
+            onError("Failed to read image")
+            return
+        }
+
+        // Use the same CloudinaryHelper
+        CloudinaryHelper.uploadImage(file) { success, url ->
+            if (success && url != null) {
+                val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return@uploadImage
+                FirebaseFirestore.getInstance()
+                    .collection("users")
+                    .document(uid)
+                    .update("profileImageUrl", url)
+                    .addOnSuccessListener {
+                        profileImageUrl.value = url
+                        onSuccess()
+                    }
+                    .addOnFailureListener { e -> onError("Firestore update failed: ${e.message}") }
+            } else {
+                onError("Cloudinary upload failed")
+            }
+        }
+    }
+
+    /** Update user name & bio in Firestore */
+    fun updateUserProfile(context: Context, newName: String, newBio: String) {
+        val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        FirebaseFirestore.getInstance()
+            .collection("users")
+            .document(uid)
+            .update(
+                mapOf(
+                    "name" to newName,
+                    "bio" to newBio
+                )
+            )
+            .addOnSuccessListener {
+                name.value = newName
+                bio.value = newBio
+                Toast.makeText(context, "Profile updated", Toast.LENGTH_SHORT).show()
+            }
+            .addOnFailureListener { e ->
+                Toast.makeText(context, "Update failed: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
     }
 
 
@@ -198,51 +298,38 @@ class UserViewModel : ViewModel() {
                 Log.e("NotificationDebug", "Error adding notification: ${it.message}")
 
             }
-       // 2. Firestore se sab users ke FCM tokens fetch karo aur push bhejo
-       firestore.collection("users").get().addOnSuccessListener { snapshot ->
-           for (doc in snapshot.documents) {
-               val token = doc.getString("fcmToken")
-               if (!token.isNullOrEmpty()) {
-                   sendFCMNotification(token, title, message) // helper call
-               }
-           }
-       }.addOnFailureListener { e ->
-           Log.e("NotificationDebug", "Error fetching users: ${e.message}")
-       }
-    }
-    private fun sendFCMNotification(token: String, title: String, message: String) {
-        val serverKey = "YOUR_SERVER_KEY" // Firebase Console -> Project Settings -> Cloud Messaging -> Server key
-        val url = "https://fcm.googleapis.com/fcm/send"
+       sendOneSignalNotification(title, message)
 
+   }
+    private fun sendOneSignalNotification(title: String, message: String) {
+        val url = "https://onesignal.com/api/v1/notifications"
+        val appId = "812c59fb-aed1-4bf7-b899-b87dbc43880e"
+        val apiKey = "os_v2_app_qewft65o2ff7poezxb63yq4ib3pmek4kto3edmuywjkntg4zq4dmtf4bwcvdu7ucu42mhov3cyhyuxixkoxfzu322w56x7olphzc6gi" // (From OneSignal dashboard)
         val json = """
         {
-          "to": "$token",
-          "notification": {
-            "title": "$title",
-            "body": "$message"
-          }
+            "app_id": "$appId",
+            "included_segments": ["All"],    // ya custom tags ke hisaab se
+            "headings": {"en": "$title"},
+            "contents": {"en": "$message"}
         }
     """.trimIndent()
-
-        val client = OkHttpClient()
-        val requestBody = json.toRequestBody("application/json; charset=utf-8".toMediaType())
+        val body = json.toRequestBody("application/json; charset=utf-8".toMediaType())
         val request = Request.Builder()
             .url(url)
-            .post(requestBody)
-            .addHeader("Authorization", "key=$serverKey")
+            .post(body)
+            .addHeader("Authorization", "Basic $apiKey")
             .addHeader("Content-Type", "application/json")
             .build()
-
-        client.newCall(request).enqueue(object : Callback {
+        OkHttpClient().newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
-                Log.e("FCM", "Error sending FCM: ${e.message}")
+                Log.e("OneSignal", "Failed: ${e.message}")
             }
-
             override fun onResponse(call: Call, response: Response) {
-                Log.d("FCM", "FCM sent: ${response.body?.string()}")
+                Log.d("OneSignal", "Resp: ${response.body?.string()}")
             }
         })
     }
+
 
 
     fun observeUserNotifications(userId: String) {
@@ -267,24 +354,5 @@ class UserViewModel : ViewModel() {
             .document(notificationId)
             .update("isRead", true)
     }
-    fun saveUserToken() {
-        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
-            if (task.isSuccessful) {
-                val token = task.result
-                val uid = FirebaseAuth.getInstance().currentUser?.uid
-                if (uid != null) {
-                    FirebaseFirestore.getInstance()
-                        .collection("users")
-                        .document(uid)
-                        .update("fcmToken", token)
-                        .addOnSuccessListener {
-                            Log.d("FCM", "Token saved: $token")
-                        }
-                        .addOnFailureListener { e ->
-                            Log.e("FCM", "Error saving token: ${e.message}")
-                        }
-                }
-            }
-        }
-    }
+
 }
