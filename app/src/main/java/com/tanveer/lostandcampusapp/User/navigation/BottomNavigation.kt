@@ -6,12 +6,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -112,16 +114,30 @@ fun BottomNavigationBar(navController: NavHostController) {
         BottomNavItems.Profile
     )
 
-    NavigationBar {
+    NavigationBar(
+        containerColor = Color.Black,
+        contentColor = MaterialTheme.colorScheme.onBackground,
+        tonalElevation = 8.dp
+
+    ) {
         val navBackStackEntry by navController.currentBackStackEntryAsState()
         val currentRoute = navBackStackEntry?.destination?.route
 
         items.forEach { item ->
             NavigationBarItem(
-                icon = { Icon(item.icon, contentDescription = item.name) },
-                label = { Text(item.name) },
+                icon = { Icon(item.icon, contentDescription = item.route) },
+//                label = { Text(item.route) },
                 selected = currentRoute == item.route,
+                alwaysShowLabel = false, // 👈 label text hide
+                label = null, // 👈 optional (hide label completely)
+                colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = MaterialTheme.colorScheme.primary, // selected icon color
+                    indicatorColor = Color.DarkGray, // selected background circle
+                    unselectedIconColor = Color.White, // 👈 white icons for unselected
+//                    unselectedIconColor = Color.White.copy(alpha = 0.6f),
+//                    unselectedTextColor = Color.White,
 
+                    ),
                 onClick = {
                     navController.navigate(item.route) {
                         popUpTo(navController.graph.startDestinationId)

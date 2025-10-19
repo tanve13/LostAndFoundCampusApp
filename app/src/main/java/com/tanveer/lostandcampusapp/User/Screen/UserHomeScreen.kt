@@ -116,7 +116,9 @@ fun PostCard(post: Post,navController: NavController, viewModel: UserViewModel,
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp),
-        elevation = CardDefaults.cardElevation(6.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White
+        ), elevation = CardDefaults.cardElevation(6.dp),
         shape = RoundedCornerShape(16.dp)
     ) {
         Column {

@@ -1,8 +1,12 @@
 package com.tanveer.lostandcampusapp.Admin.AdminScreens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -17,15 +21,28 @@ import com.github.mikephil.charting.data.LineDataSet
 import com.github.mikephil.charting.data.LineData
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
 import androidx.compose.ui.viewinterop.AndroidView
+import com.tanveer.lostandcampusapp.Admin.AdminModel.AdminViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
 
 @Composable
-fun AdminHomeScreen() {
-    // TODO: Replace static values with ViewModel/Firebase data
-    val totalPosts = 120
-    val lostPosts = 70
-    val foundPosts = 50
-    val pendingClaims = 12
-    val resolvedCases = 35
+fun AdminHomeScreen(
+    adminViewModel: AdminViewModel = AdminViewModel()
+) {
+    LaunchedEffect(Unit) {
+        adminViewModel.fetchAdminStats()
+    }
+
+    val totalPosts = adminViewModel.totalPosts
+    val lostPosts = adminViewModel.lostPosts
+    val foundPosts = adminViewModel.foundPosts
+    val pendingClaims = adminViewModel.pendingClaims
+    val resolvedCases = adminViewModel.resolvedCases
+    val totalUsers = adminViewModel.totalUsers
+    val lostCount = adminViewModel.lostCount
+    val foundCount = adminViewModel.foundCount
+    val newUsers = adminViewModel.newUsersThisWeek
+    val mostActive = adminViewModel.mostActiveUser
+    val mostCommon = adminViewModel.mostCommonCategory
 
     Column(
         modifier = Modifier
@@ -40,42 +57,92 @@ fun AdminHomeScreen() {
             ),
             modifier = Modifier.padding(bottom = 16.dp)
         )
-
-        // ---- Stats Row ----
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
+        Row(Modifier.fillMaxWidth(), Arrangement.SpaceEvenly) {
             StatCard("Total", totalPosts, MaterialTheme.colorScheme.primary)
             StatCard("Lost", lostPosts, Color.Red)
             StatCard("Found", foundPosts, Color.Green)
         }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
+        Spacer(Modifier.height(12.dp))
+        Row(Modifier.fillMaxWidth(), Arrangement.SpaceEvenly) {
             StatCard("Pending", pendingClaims, Color(0xFFFF9800))
             StatCard("Resolved", resolvedCases, Color(0xFF4CAF50))
         }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // ---- Graph Section ----
+        Spacer(Modifier.height(24.dp))
+        // -- Users --
+        Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)) {
+            Column(Modifier.padding(16.dp)) {
+                Text("App Users", fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(4.dp))
+                Text("Total Registered: $totalUsers")
+                Text("New This Week: $newUsers", color = Color(0xFF1976D2))
+            }
+        }
+        // -- Posts Lost/Found Ratio --
+        Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)) {
+            Column(Modifier.padding(16.dp)) {
+                Text("Lost vs Found Ratio", fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(4.dp))
+                // Mini pie chart representation (text only), Compose donut charts available via 3rd-party
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        Modifier
+                            .size(36.dp)
+                            .padding(end = 8.dp)
+                            .background(Color(0xFFd32f2f), shape = CircleShape)
+                    ) // Lost color
+                    Text("Lost: $lostCount", color = Color(0xFFd32f2f))
+                    Spacer(Modifier.width(12.dp))
+                    Box(
+                        Modifier
+                            .size(36.dp)
+                            .padding(end = 8.dp)
+                            .background(Color(0xFF388e3c), shape = CircleShape)
+                    ) // Found color
+                    Text("Found: $foundCount", color = Color(0xFF388e3c))
+                }
+                val percent = if (lostCount + foundCount != 0) (foundCount * 100) / (lostCount + foundCount) else 0
+                Spacer(Modifier.height(4.dp))
+                Text("Recovery %: $percent%")
+            }
+        }
+        // -- Most Common Item Category --
+        Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)) {
+            Column(Modifier.padding(16.dp)) {
+                Text("Most Common Category", fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    mostCommon?.first ?: "N/A",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Text("${mostCommon?.second ?: "--"} posts")
+            }
+        }
+        // -- Most Active Contributor --
+        Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)) {
+            Column(Modifier.padding(16.dp)) {
+                Text("Top Contributor", fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    mostActive?.first ?: "N/A",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = Color(0xFF1976D2)
+                )
+                Text("${mostActive?.second ?: "--"} posts this week")
+            }
+        }
         Text(
             text = "Weekly Activity",
             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
             modifier = Modifier.padding(bottom = 8.dp)
         )
-
         ActivityLineChart(
-            data = listOf(5, 8, 6, 12, 9, 14, 10), // sample weekly data
-            labels = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+            data = adminViewModel.weeklyPosts,
+            labels = adminViewModel.weekLabels
         )
     }
 }
+
 
 @Composable
 fun StatCard(title: String, count: Int, color: Color) {

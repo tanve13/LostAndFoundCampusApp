@@ -9,13 +9,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 
 sealed class AdminNavItem(
     val route: String,
-    val title: String,
     val icon: ImageVector
 ) {
-    object Dashboard : AdminNavItem("adminHome", "Dashboard", Icons.Default.Leaderboard)
-    object AllPosts : AdminNavItem("allPosts", "All Posts", Icons.Default.List)
-    object Claims : AdminNavItem("claims", "Claims", Icons.Default.Mail)
-    object Settings : AdminNavItem("settings", "Settings", Icons.Default.Settings)
+    object Dashboard : AdminNavItem("adminHome",  Icons.Default.Leaderboard)
+    object AllPosts : AdminNavItem("allPosts",  Icons.Default.List)
+    object Claims : AdminNavItem("claims",  Icons.Default.Mail)
+    object Settings : AdminNavItem("settings",  Icons.Default.Settings)
 
     companion object {
         val items = listOf(Dashboard, AllPosts, Claims, Settings)

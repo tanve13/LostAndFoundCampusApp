@@ -34,8 +34,8 @@ fun AdminNavigation(navController : NavHostController) {
                                 launchSingleTop = true
                             }
                         },
-                        icon = { Icon(item.icon, contentDescription = item.title) },
-                        label = { Text(item.title) }
+                        icon = { Icon(item.icon, contentDescription = item.route) },
+                        label = { Text(item.route) }
                     )
                 }
             }
