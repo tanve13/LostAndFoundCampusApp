@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 import com.tanveer.lostandcampusapp.model.Post
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -28,6 +29,9 @@ class AdminViewModel @Inject constructor() : ViewModel() {
     var mostCommonCategory by mutableStateOf<Pair<String, Int>?>(null)
     var weeklyPosts by mutableStateOf(listOf(0, 0, 0, 0, 0, 0, 0))
     var weekLabels by mutableStateOf(listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"))
+ // for allpost screen
+    var allPosts by mutableStateOf<List<Post>>(emptyList())
+    var filter by mutableStateOf("ALL") // ALL, PENDING, RESOLVED
 
     // Load all stats from Firestore
     fun fetchAdminStats() {
@@ -70,4 +74,25 @@ class AdminViewModel @Inject constructor() : ViewModel() {
             weeklyPosts = (0..6).map { day -> grouped[day]?.size ?: 0 }
         }
     }
+
+    fun fetchAllPosts() {
+        firestore.collection("posts")
+            .orderBy("timestamp", Query.Direction.DESCENDING)
+            .get()
+            .addOnSuccessListener { query ->
+                allPosts = query.documents.mapNotNull { it.toObject(Post::class.java) }
+            }
+    }
+
+    fun deletePost(postId: String, onSuccess: () -> Unit, onFailure: (String) -> Unit) {
+        firestore.collection("posts").document(postId).delete()
+            .addOnSuccessListener { onSuccess() }
+            .addOnFailureListener { e -> onFailure(e.message ?: "Deletion failed") }
+    }
+    val filteredPosts: List<Post>
+        get() = when(filter) {
+            "PENDING" -> allPosts.filter { it.claimedBy.isNullOrEmpty() }
+            "RESOLVED" -> allPosts.filter { !it.claimedBy.isNullOrEmpty() }
+            else -> allPosts
+        }
 }

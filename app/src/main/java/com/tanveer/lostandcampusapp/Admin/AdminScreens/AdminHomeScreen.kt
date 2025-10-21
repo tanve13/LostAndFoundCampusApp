@@ -1,9 +1,11 @@
 package com.tanveer.lostandcampusapp.Admin.AdminScreens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -22,16 +24,15 @@ import com.github.mikephil.charting.data.LineData
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
 import androidx.compose.ui.viewinterop.AndroidView
 import com.tanveer.lostandcampusapp.Admin.AdminModel.AdminViewModel
-import dagger.hilt.android.lifecycle.HiltViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 
 @Composable
 fun AdminHomeScreen(
-    adminViewModel: AdminViewModel = AdminViewModel()
+    adminViewModel: AdminViewModel = hiltViewModel()
 ) {
     LaunchedEffect(Unit) {
         adminViewModel.fetchAdminStats()
     }
-
     val totalPosts = adminViewModel.totalPosts
     val lostPosts = adminViewModel.lostPosts
     val foundPosts = adminViewModel.foundPosts
@@ -43,103 +44,124 @@ fun AdminHomeScreen(
     val newUsers = adminViewModel.newUsersThisWeek
     val mostActive = adminViewModel.mostActiveUser
     val mostCommon = adminViewModel.mostCommonCategory
+    val skyBlue = Color(0xFFE3F2FD)
+    Column(modifier = Modifier.fillMaxSize()) {
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.primaryContainer)
+                .padding(vertical = 18.dp)
+        ) {
+            Text(
+                text = "Admin Dashboard",
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold
+                ),
+                modifier = Modifier.align(Alignment.Center)
+            )
+        }
+        Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(18.dp)
+        ) {
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        Text(
-            text = "Admin Dashboard",
-            style = MaterialTheme.typography.titleLarge.copy(
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold
-            ),
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
-        Row(Modifier.fillMaxWidth(), Arrangement.SpaceEvenly) {
-            StatCard("Total", totalPosts, MaterialTheme.colorScheme.primary)
-            StatCard("Lost", lostPosts, Color.Red)
-            StatCard("Found", foundPosts, Color.Green)
-        }
-        Spacer(Modifier.height(12.dp))
-        Row(Modifier.fillMaxWidth(), Arrangement.SpaceEvenly) {
-            StatCard("Pending", pendingClaims, Color(0xFFFF9800))
-            StatCard("Resolved", resolvedCases, Color(0xFF4CAF50))
-        }
-        Spacer(Modifier.height(24.dp))
-        // -- Users --
-        Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)) {
-            Column(Modifier.padding(16.dp)) {
-                Text("App Users", fontWeight = FontWeight.Bold)
-                Spacer(Modifier.height(4.dp))
-                Text("Total Registered: $totalUsers")
-                Text("New This Week: $newUsers", color = Color(0xFF1976D2))
+            Row(Modifier.fillMaxWidth(),horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                StatCard("Total", totalPosts, MaterialTheme.colorScheme.primary)
+                StatCard("Lost", lostPosts, Color.Red)
+                StatCard("Found", foundPosts, Color.Green)
             }
-        }
-        // -- Posts Lost/Found Ratio --
-        Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)) {
-            Column(Modifier.padding(16.dp)) {
-                Text("Lost vs Found Ratio", fontWeight = FontWeight.Bold)
-                Spacer(Modifier.height(4.dp))
-                // Mini pie chart representation (text only), Compose donut charts available via 3rd-party
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        Modifier
-                            .size(36.dp)
-                            .padding(end = 8.dp)
-                            .background(Color(0xFFd32f2f), shape = CircleShape)
-                    ) // Lost color
-                    Text("Lost: $lostCount", color = Color(0xFFd32f2f))
-                    Spacer(Modifier.width(12.dp))
-                    Box(
-                        Modifier
-                            .size(36.dp)
-                            .padding(end = 8.dp)
-                            .background(Color(0xFF388e3c), shape = CircleShape)
-                    ) // Found color
-                    Text("Found: $foundCount", color = Color(0xFF388e3c))
+            Spacer(Modifier.height(12.dp))
+
+            Row(Modifier.fillMaxWidth(),horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                StatCard("Pending", pendingClaims, Color(0xFFFF9800))
+                StatCard("Resolved", resolvedCases, Color(0xFF4CAF50))
+            }
+            Spacer(Modifier.height(24.dp))
+            // -- Users --
+            Card(
+                Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = skyBlue)
+            ) {
+                Column(Modifier.padding(16.dp)) {
+                    Text("App Users", fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.height(4.dp))
+                    Text("Total Registered: $totalUsers")
+                    Text("New This Week: $newUsers", color = Color(0xFF1976D2))
                 }
-                val percent = if (lostCount + foundCount != 0) (foundCount * 100) / (lostCount + foundCount) else 0
-                Spacer(Modifier.height(4.dp))
-                Text("Recovery %: $percent%")
             }
-        }
-        // -- Most Common Item Category --
-        Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)) {
-            Column(Modifier.padding(16.dp)) {
-                Text("Most Common Category", fontWeight = FontWeight.Bold)
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    mostCommon?.first ?: "N/A",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Text("${mostCommon?.second ?: "--"} posts")
+            // -- Most Common Item Category --
+            Card(
+                Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = skyBlue)
+            ) {
+                Column(Modifier.padding(16.dp)) {
+                    Text("Most Common Category", fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        mostCommon?.first ?: "N/A",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text("${mostCommon?.second ?: "--"} posts")
+                }
             }
-        }
-        // -- Most Active Contributor --
-        Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)) {
-            Column(Modifier.padding(16.dp)) {
-                Text("Top Contributor", fontWeight = FontWeight.Bold)
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    mostActive?.first ?: "N/A",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = Color(0xFF1976D2)
-                )
-                Text("${mostActive?.second ?: "--"} posts this week")
+            // -- Most Active Contributor --
+            Card(
+                Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = skyBlue)
+            ) {
+                Column(Modifier.padding(16.dp)) {
+                    Text("Top Contributor", fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        mostActive?.first ?: "N/A",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = Color(0xFF1976D2)
+                    )
+                    Text("${mostActive?.second ?: "--"} posts this week")
+                }
             }
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                LostFoundPieChart(lostCount, foundCount, Modifier.weight(1f))
+                Spacer(Modifier.width(8.dp))
+                Card(
+                    Modifier
+                        .weight(2f)
+                        .padding(end = 12.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF1F8E9)),
+                    shape = RoundedCornerShape(18.dp)
+                ) {
+                    Column(Modifier.padding(14.dp)) {
+                        Text("Lost vs Found Ratio", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Text("Lost: $lostCount    Found: $foundCount", fontSize = 14.sp)
+                        val percent =
+                            if (lostCount + foundCount != 0) (foundCount * 100) / (lostCount + foundCount) else 0
+                        Text("Recovery Rate: $percent%", color = Color(0xFF0296A5))
+                    }
+                }
+            }
+
+            Text(
+                text = "Weekly Activity",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            ActivityLineChart(
+                data = adminViewModel.weeklyPosts,
+                labels = adminViewModel.weekLabels
+            )
         }
-        Text(
-            text = "Weekly Activity",
-            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-        ActivityLineChart(
-            data = adminViewModel.weeklyPosts,
-            labels = adminViewModel.weekLabels
-        )
     }
 }
 
@@ -168,6 +190,43 @@ fun StatCard(title: String, count: Int, color: Color) {
                 fontSize = 14.sp,
                 color = MaterialTheme.colorScheme.onSurface
             )
+        }
+    }
+}
+@Composable
+fun LostFoundPieChart(lostCount: Int, foundCount: Int, modifier: Modifier = Modifier) {
+    val total = lostCount + foundCount
+    val lostRatio = if (total == 0) 0f else lostCount.toFloat() / total
+    val foundRatio = if (total == 0) 0f else foundCount.toFloat() / total
+
+    val pastelOrange = Color(0xFFFFCC80)
+    val pastelBlue = Color(0xFFB3E5FC)
+
+    Box(
+        modifier
+            .size(118.dp)
+            .padding(8.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(modifier = Modifier.matchParentSize()) {
+            val sweepLost = 360f * lostRatio
+            val sweepFound = 360f * foundRatio
+
+            // Lost slice
+            drawArc(
+                color = pastelOrange, startAngle = -90f, sweepAngle = sweepLost,
+                useCenter = true
+            )
+            // Found slice
+            drawArc(
+                color = pastelBlue, startAngle = -90f + sweepLost, sweepAngle = sweepFound,
+                useCenter = true
+            )
+        }
+        // Center label (optional)
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text("L/F", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            Text("${if (total == 0) 0 else (foundCount * 100 / total)}%", fontSize = 16.sp, color = pastelBlue)
         }
     }
 }

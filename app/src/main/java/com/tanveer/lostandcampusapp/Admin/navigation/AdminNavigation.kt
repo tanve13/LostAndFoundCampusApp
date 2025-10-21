@@ -3,15 +3,21 @@ package com.tanveer.lostandcampusapp.Admin.navigation
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.tanveer.lostandcampusapp.Admin.AdminScreens.AdminHomeScreen
 import com.tanveer.lostandcampusapp.Admin.AdminScreens.AllPostsScreen
@@ -23,19 +29,31 @@ fun AdminNavigation(navController : NavHostController) {
 
     Scaffold(
         bottomBar = {
-            NavigationBar {
+            NavigationBar( containerColor = Color.Black,
+                contentColor = MaterialTheme.colorScheme.onBackground,
+                tonalElevation = 8.dp) {
+//                val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentRoute = navController.currentBackStackEntry?.destination?.route
+
+
                 AdminNavItem.items.forEach { item ->
                     NavigationBarItem(
+                        icon = { Icon(item.icon, contentDescription = item.route) },
                         selected = currentRoute == item.route,
+                        alwaysShowLabel = false,
+                        label = null,
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = Color.White,
+                            indicatorColor = Color.DarkGray,
+                            unselectedIconColor = Color.White,
+                        ),
                         onClick = {
                             navController.navigate(item.route) {
                                 popUpTo(navController.graph.startDestinationId)
                                 launchSingleTop = true
                             }
                         },
-                        icon = { Icon(item.icon, contentDescription = item.route) },
-                        label = { Text(item.route) }
+//                        label = { Text(item.route) }
                     )
                 }
             }

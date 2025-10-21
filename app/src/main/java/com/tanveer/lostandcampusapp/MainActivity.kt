@@ -20,8 +20,10 @@ import com.tanveer.lostandcampusapp.User.navigation.MainNavigation
 import com.tanveer.lostandcampusapp.ui.theme.LostAndCampusAppTheme
 import com.tanveer.lostandcampusapp.ui.theme.ThemePreference
 import com.tanveer.lostandcampusapp.viewModel.UserViewModel
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

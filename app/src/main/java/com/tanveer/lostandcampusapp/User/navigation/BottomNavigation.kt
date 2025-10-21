@@ -128,12 +128,12 @@ fun BottomNavigationBar(navController: NavHostController) {
                 icon = { Icon(item.icon, contentDescription = item.route) },
 //                label = { Text(item.route) },
                 selected = currentRoute == item.route,
-                alwaysShowLabel = false, // 👈 label text hide
-                label = null, // 👈 optional (hide label completely)
+                alwaysShowLabel = false,
+                label = null,
                 colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = MaterialTheme.colorScheme.primary, // selected icon color
-                    indicatorColor = Color.DarkGray, // selected background circle
-                    unselectedIconColor = Color.White, // 👈 white icons for unselected
+                    selectedIconColor = Color.White,
+                    indicatorColor = Color.DarkGray,
+                    unselectedIconColor = Color.White,
 //                    unselectedIconColor = Color.White.copy(alpha = 0.6f),
 //                    unselectedTextColor = Color.White,
 

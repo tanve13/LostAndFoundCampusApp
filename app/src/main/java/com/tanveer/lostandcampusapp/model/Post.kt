@@ -11,6 +11,7 @@ data class Post(
     val timestamp: Long = System.currentTimeMillis(),
     val claimedBy: String? = null,
     val userName: String?= "",
-    val userRegNo: String?= ""
+    val userRegNo: String?= "",
+     val status: String = ""
 )
 
