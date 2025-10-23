@@ -24,7 +24,6 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.tanveer.lostandcampusapp.User.navigation.BottomNavItems
 import com.tanveer.lostandcampusapp.viewModel.UserViewModel
-import kotlinx.coroutines.launch
 import java.io.File
 
 //@OptIn(ExperimentalMaterial3Api::class)

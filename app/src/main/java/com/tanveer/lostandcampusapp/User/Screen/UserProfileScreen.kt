@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import com.tanveer.lostandcampusapp.data.AuthRepo
 import com.tanveer.lostandcampusapp.data.DataStoreManager
 import com.tanveer.lostandcampusapp.viewModel.UserViewModel
@@ -209,7 +210,7 @@ fun UserProfileScreen(
                 val regNo = userViewModel.regNo.value
                 if (regNo.isNotEmpty()) {
                     // Update in Firestore
-                    val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                    val db = FirebaseFirestore.getInstance()
                     db.collection("users").document(regNo)
                         .update("name", newName)
                         .addOnSuccessListener {

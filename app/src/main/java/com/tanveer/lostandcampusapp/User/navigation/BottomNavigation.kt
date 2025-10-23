@@ -44,13 +44,13 @@ fun BottomNavigation(
 
     NavHost(navController = navController, startDestination = BottomNavItems.Home.route) {
         composable(BottomNavItems.Home.route) {
-            HomeScreen(viewModel = userViewModel, navController)
+          HomeScreen(viewModel = userViewModel, navController)
         }
         composable(BottomNavItems.MyPost.route) {
-            UserMyPostScreen(viewModel = userViewModel)
+         UserMyPostScreen(viewModel = userViewModel)
         }
         composable(BottomNavItems.Post.route) {
-            PostScreen(navController, viewModel = userViewModel)
+           PostScreen(navController, viewModel = userViewModel)
         }
 
         composable(BottomNavItems.Notification.route) {
@@ -58,7 +58,7 @@ fun BottomNavigation(
             NotificationScreen(
                 userId = userId,
                 navController = navController,
-                viewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+                viewModel = viewModel()
             )
         }
         // ===== Profile =====
@@ -81,7 +81,7 @@ fun BottomNavigation(
             val post = posts.find { it.id == postId }
 
             post?.let {
-                ClaimScreen(
+               ClaimScreen(
                     post = it,
                     viewModel = userViewModel,
                     navController = navController
@@ -97,7 +97,10 @@ fun BottomNavigation(
         ) { backStackEntry ->
             val chatId = backStackEntry.arguments?.getString("chatId") ?: ""
             val postOwnerName = backStackEntry.arguments?.getString("postOwnerName") ?: "User"
-            ChatScreen(chatId = chatId, postOwnerName = postOwnerName)
+            ChatScreen(
+                chatId = chatId,
+                postOwnerName = postOwnerName
+            )
         }
 
 

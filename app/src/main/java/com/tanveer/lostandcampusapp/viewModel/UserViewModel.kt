@@ -310,11 +310,11 @@ class UserViewModel : ViewModel() {
     private fun sendOneSignalNotification(title: String, message: String) {
         val url = "https://onesignal.com/api/v1/notifications"
         val appId = "812c59fb-aed1-4bf7-b899-b87dbc43880e"
-        val apiKey = "os_v2_app_qewft65o2ff7poezxb63yq4ib3pmek4kto3edmuywjkntg4zq4dmtf4bwcvdu7ucu42mhov3cyhyuxixkoxfzu322w56x7olphzc6gi" // (From OneSignal dashboard)
+        val apiKey = "os_v2_app_qewft65o2ff7poezxb63yq4ib3pmek4kto3edmuywjkntg4zq4dmtf4bwcvdu7ucu42mhov3cyhyuxixkoxfzu322w56x7olphzc6gi"
         val json = """
         {
             "app_id": "$appId",
-            "included_segments": ["All"],    // ya custom tags ke hisaab se
+            "included_segments": ["All"],    
             "headings": {"en": "$title"},
             "contents": {"en": "$message"}
         }
