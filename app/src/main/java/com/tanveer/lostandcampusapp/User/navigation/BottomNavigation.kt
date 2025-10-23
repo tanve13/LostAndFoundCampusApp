@@ -126,18 +126,14 @@ fun BottomNavigationBar(navController: NavHostController) {
         items.forEach { item ->
             NavigationBarItem(
                 icon = { Icon(item.icon, contentDescription = item.route) },
-//                label = { Text(item.route) },
                 selected = currentRoute == item.route,
                 alwaysShowLabel = false,
                 label = null,
                 colors = NavigationBarItemDefaults.colors(
                     selectedIconColor = Color.White,
                     indicatorColor = Color.DarkGray,
-                    unselectedIconColor = Color.White,
-//                    unselectedIconColor = Color.White.copy(alpha = 0.6f),
-//                    unselectedTextColor = Color.White,
-
-                    ),
+                    unselectedIconColor = Color.White
+                ),
                 onClick = {
                     navController.navigate(item.route) {
                         popUpTo(navController.graph.startDestinationId)
@@ -158,9 +154,11 @@ fun MainNavigation(navController: NavHostController, rootNavController: NavHostC
 
     Scaffold(
         bottomBar = {
-            if (currentRoute?.startsWith("chat") == false) {
+            // Hide nav bar on "chat" & "post" screen
+            if (currentRoute != BottomNavItems.Post.route && (currentRoute?.startsWith("chat") == false)) {
                 BottomNavigationBar(navController)
             }
+
         }
     ) { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding)) {

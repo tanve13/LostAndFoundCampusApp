@@ -274,11 +274,17 @@ class UserViewModel : ViewModel() {
     }
    ////to send notification ....
     fun sendPostNotification(postType: String, title: String, message: String) {
+       val emoji = when(postType.lowercase()) {
+           "lost" -> "\uD83D\u2753"  // ❓ (Question Mark)
+           "found" -> "\uD83D\uDD0E" // 🔎 Magnifying Glass emoji (Found)
+           else -> ""
+       }
+       val fullTitle = "$emoji $title"
+       val fullMessage = "$emoji $message"
         val firestore = FirebaseFirestore.getInstance()
-
-        val notification = NotificationDataClass(
-            title = title,
-            message = message,
+       val notification = NotificationDataClass(
+            title = fullTitle,
+            message = fullMessage,
             type = postType,
             timestamp = System.currentTimeMillis(),
             userId = null,
@@ -298,7 +304,7 @@ class UserViewModel : ViewModel() {
                 Log.e("NotificationDebug", "Error adding notification: ${it.message}")
 
             }
-       sendOneSignalNotification(title, message)
+       sendOneSignalNotification(fullTitle, fullMessage)
 
    }
     private fun sendOneSignalNotification(title: String, message: String) {

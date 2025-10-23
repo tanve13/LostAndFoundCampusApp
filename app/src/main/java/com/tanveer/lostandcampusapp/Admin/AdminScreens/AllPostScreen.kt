@@ -45,63 +45,72 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import com.google.accompanist.swiperefresh.SwipeRefresh
+import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import com.tanveer.lostandcampusapp.Admin.AdminModel.AdminViewModel
 import com.tanveer.lostandcampusapp.model.Post
 
 @Composable
 fun AllPostsScreen(adminViewModel: AdminViewModel = hiltViewModel()) {
     val posts = adminViewModel.filteredPosts
+    val isLoading = adminViewModel.isLoading
+    val swipeRefreshState = rememberSwipeRefreshState(isLoading)
     val (showConfirmDialog, setShowConfirmDialog) = remember { mutableStateOf(false) }
-    var (postToDelete, setPostToDelete) = remember { mutableStateOf<Post?>(null) }
+    var postToDelete by remember { mutableStateOf<Post?>(null) }
     var selectedPost by remember { mutableStateOf<Post?>(null) }
     var showDetailDialog by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         adminViewModel.fetchAllPosts()
     }
-
-    Column(modifier = Modifier
-        .fillMaxSize()
-        .padding(12.dp)) {
-        // Filter buttons
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+    SwipeRefresh(
+        state = swipeRefreshState,
+        onRefresh = { adminViewModel.refreshAllPosts() }
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(12.dp)
         ) {
-            FilterButton("All", adminViewModel.filter == "ALL") { adminViewModel.filter = "ALL" }
-            FilterButton("Pending", adminViewModel.filter == "PENDING") {
-                adminViewModel.filter = "PENDING"
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                FilterButton("All", adminViewModel.filter == "ALL") {
+                    adminViewModel.filter = "ALL"
+                }
+                FilterButton("Pending", adminViewModel.filter == "PENDING") {
+                    adminViewModel.filter = "PENDING"
+                }
+                FilterButton("Resolved", adminViewModel.filter == "RESOLVED") {
+                    adminViewModel.filter = "RESOLVED"
+                }
             }
-            FilterButton("Resolved", adminViewModel.filter == "RESOLVED") {
-                adminViewModel.filter = "RESOLVED"
-            }
-        }
 
-        Spacer(modifier = Modifier.height(12.dp))
-        // Posts List
-        LazyColumn(
-            Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(posts, key = { it.id }) { post ->
-                PostListItem(
-                    post = post,
-                    onClick = {
-                        selectedPost = post
-                        showDetailDialog = true
-                    },
-                    onDelete = { postToDelete = post }
-                )
+            Spacer(modifier = Modifier.height(12.dp))
+            LazyColumn(
+                Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(posts, key = { it.id }) { post ->
+                    PostListItem(
+                        post = post,
+                        onClick = {
+                            selectedPost = post
+                            showDetailDialog = true
+                        },
+                        onDelete = {
+                            postToDelete = post
+                            setShowConfirmDialog(true)
+                        }
+                    )
+                }
             }
         }
     }
-
-    // Details Dialog/BottomSheet
-    if (showDetailDialog && selectedPost != null) {
-        PostDetailDialog(post = selectedPost!!, onDismiss = { showDetailDialog = false })
-    }
-
-
-
+        // Details Dialog/BottomSheet
+        if (showDetailDialog && selectedPost != null) {
+            PostDetailDialog(post = selectedPost!!, onDismiss = { showDetailDialog = false })
+        }
     if (showConfirmDialog && postToDelete != null) {
         AlertDialog(
             onDismissRequest = { setShowConfirmDialog(false) },
@@ -112,11 +121,13 @@ fun AllPostsScreen(adminViewModel: AdminViewModel = hiltViewModel()) {
                     adminViewModel.deletePost(postToDelete!!.id,
                         onSuccess = {
                             setShowConfirmDialog(false)
-                            adminViewModel.fetchAllPosts() // refresh list
+                            adminViewModel.fetchAllPosts()
+                            adminViewModel.refreshAllPosts()
+
                         },
                         onFailure = { msg ->
                             setShowConfirmDialog(false)
-                            // Show error toast/snackbar etc.
+
                         })
                 }) {
                     Text("Delete", color = Color.Red)
@@ -193,7 +204,6 @@ fun PostListItem(post: Post, onClick: () -> Unit, onDelete: () -> Unit) {
 
 @Composable
 fun StatusLabel(status: String) {
-    // nice material badge
     val color = when (status) {
         "Pending" -> Color(0xFFFFF59D)
 //        "In Progress" -> Color(0xFFFFCC80)

@@ -100,6 +100,8 @@ dependencies {
     implementation "com.google.firebase:firebase-messaging-ktx:23.1.2"
     //onesignal
     implementation 'com.onesignal:OneSignal:5.1.36'
+   //refresh screen loader
+    implementation "com.google.accompanist:accompanist-swiperefresh:0.33.2-alpha"
 
 }
 apply plugin: 'com.google.gms.google-services'

@@ -1,6 +1,5 @@
 package com.tanveer.lostandcampusapp.Admin.navigation
 
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -8,20 +7,16 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
+import com.tanveer.lostandcampusapp.Admin.AdminScreens.AdminClaimsScreen
 import com.tanveer.lostandcampusapp.Admin.AdminScreens.AdminHomeScreen
 import com.tanveer.lostandcampusapp.Admin.AdminScreens.AllPostsScreen
-import com.tanveer.lostandcampusapp.Admin.AdminScreens.ClaimsScreen
 import com.tanveer.lostandcampusapp.Admin.AdminScreens.SettingScreen
 
 @Composable
@@ -66,8 +61,18 @@ fun AdminNavigation(navController : NavHostController) {
         ) {
             composable(AdminNavItem.Dashboard.route) { AdminHomeScreen() }
             composable(AdminNavItem.AllPosts.route) { AllPostsScreen() }
-            composable(AdminNavItem.Claims.route) { ClaimsScreen() }
-            composable(AdminNavItem.Settings.route) { SettingScreen() }
+            composable(AdminNavItem.Claims.route) { AdminClaimsScreen() }
+            composable(AdminNavItem.Settings.route){
+                SettingScreen(
+                    navController = navController,
+                    onLogout = {
+                        navController.navigate("login") {
+                            popUpTo("adminHome") { inclusive = true }
+                        }
+                    }
+                )
+            }
+
         }
     }
 }
