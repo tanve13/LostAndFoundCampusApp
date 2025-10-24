@@ -25,13 +25,14 @@ import javax.inject.Inject
 
 
 @HiltViewModel
-class AdminViewModel @Inject constructor(private val repo: AdminUserRepository,
-                                         private val repository: ClaimRepository) : ViewModel() {
+class AdminViewModel @Inject constructor(
+    private val repo: AdminUserRepository,
+    private val repository: ClaimRepository
+) : ViewModel() {
     private val firestore = FirebaseFirestore.getInstance()
-    private val auth = FirebaseAuth.getInstance()
-
-    var adminName by mutableStateOf("")
-    var adminEmail by mutableStateOf("")
+    var adminName = mutableStateOf("")
+    var adminEmail = mutableStateOf("")
+    var adminRole = mutableStateOf("")
     var profileUrl by mutableStateOf<String?>(null)
     var deletedPosts by mutableStateOf(0)
 
@@ -56,17 +57,14 @@ class AdminViewModel @Inject constructor(private val repo: AdminUserRepository,
 
     private val _user = MutableStateFlow<ProfileDataClass?>(null)
     val user = _user.asStateFlow()
-
     private val _isSaving = MutableStateFlow(false)
     val isSaving = _isSaving.asStateFlow()
-
     private val _profileUpdated = MutableStateFlow(false)
     val profileUpdated = _profileUpdated.asStateFlow()
 
     //claimscreen ke leia
     private val _claimRequests = MutableStateFlow<List<ClaimRequest>>(emptyList())
     val claimRequests: StateFlow<List<ClaimRequest>> = _claimRequests
-
     private val _isClaimLoading = MutableStateFlow(false)
     val isClaimLoading: StateFlow<Boolean> = _isClaimLoading
 
@@ -75,6 +73,7 @@ class AdminViewModel @Inject constructor(private val repo: AdminUserRepository,
             field = value
             filterClaims()
         }
+
     // Load all claims
     fun fetchClaimRequests() {
         _isClaimLoading.value = true
@@ -86,7 +85,20 @@ class AdminViewModel @Inject constructor(private val repo: AdminUserRepository,
         }
     }
 
+    fun fetchAdminProfile(regNo: String) {
+        FirebaseFirestore.getInstance()
+            .collection("users")
+            .document(regNo)
+            .get()
+            .addOnSuccessListener { doc ->
+                adminName.value = doc.getString("name") ?: ""
+                adminEmail.value = doc.getString("email") ?: ""
+                adminRole.value = doc.getString("role") ?: "user"
+            }
+    }
+
     fun refreshClaimRequests() = fetchClaimRequests()
+
     // Claims filtering logic
     private fun filterClaims() {
         val allClaims = _claimRequests.value
@@ -97,6 +109,7 @@ class AdminViewModel @Inject constructor(private val repo: AdminUserRepository,
             else -> allClaims
         }
     }
+
     // Approve claim
     fun approveClaim(claimId: String, onSuccess: () -> Unit, onFailure: () -> Unit) {
         viewModelScope.launch {
@@ -109,6 +122,7 @@ class AdminViewModel @Inject constructor(private val repo: AdminUserRepository,
             }
         }
     }
+
     // Reject claim
     fun rejectClaim(claimId: String, onSuccess: () -> Unit, onFailure: () -> Unit) {
         viewModelScope.launch {
@@ -121,6 +135,7 @@ class AdminViewModel @Inject constructor(private val repo: AdminUserRepository,
             }
         }
     }
+
     //loading ke leia
     var isLoading by mutableStateOf(false)
     fun refreshAllPosts() {
@@ -201,16 +216,6 @@ class AdminViewModel @Inject constructor(private val repo: AdminUserRepository,
             else -> allPosts
         }
 
-    fun fetchAdminInfo() {
-        val uid = auth.currentUser?.uid ?: return
-        firestore.collection("users").document(uid).get()
-            .addOnSuccessListener { doc ->
-                adminName = doc.getString("name") ?: "Admin"
-                adminEmail = doc.getString("email") ?: "Not available"
-                profileUrl = doc.getString("profileImageUrl")
-            }
-    }
-
     fun fetchStats() {
         firestore.collection("posts").get().addOnSuccessListener { query ->
             totalPosts = query.size()
@@ -218,15 +223,6 @@ class AdminViewModel @Inject constructor(private val repo: AdminUserRepository,
         }
     }
 
-    fun loadProfile(id: String) {
-        viewModelScope.launch {
-            try {
-                _user.value = repo.getAdminProfile(id)
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-    }
     fun updateProfile(context: Context, id: String, name: String, email: String, photoUri: Uri?) {
         viewModelScope.launch {
             _isSaving.value = true
@@ -267,11 +263,5 @@ class AdminViewModel @Inject constructor(private val repo: AdminUserRepository,
                 _isSaving.value = false
             }
         }
-    }
-
-
-    fun logout(onDone: () -> Unit) {
-        auth.signOut()
-        onDone()
     }
 }

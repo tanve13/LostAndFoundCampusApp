@@ -20,14 +20,13 @@ import com.tanveer.lostandcampusapp.Admin.AdminScreens.AllPostsScreen
 import com.tanveer.lostandcampusapp.Admin.AdminScreens.SettingScreen
 
 @Composable
-fun AdminNavigation(navController : NavHostController) {
+fun AdminNavigation(navController : NavHostController, rootNavController: NavHostController) {
 
     Scaffold(
         bottomBar = {
             NavigationBar( containerColor = Color.Black,
                 contentColor = MaterialTheme.colorScheme.onBackground,
                 tonalElevation = 8.dp) {
-//                val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentRoute = navController.currentBackStackEntry?.destination?.route
 
 
@@ -48,7 +47,6 @@ fun AdminNavigation(navController : NavHostController) {
                                 launchSingleTop = true
                             }
                         },
-//                        label = { Text(item.route) }
                     )
                 }
             }
@@ -63,8 +61,11 @@ fun AdminNavigation(navController : NavHostController) {
             composable(AdminNavItem.AllPosts.route) { AllPostsScreen() }
             composable(AdminNavItem.Claims.route) { AdminClaimsScreen() }
             composable(AdminNavItem.Settings.route){
+                val regNo = "12200672"
                 SettingScreen(
+                    adminRegNo = regNo,
                     navController = navController,
+                    rootNavController = rootNavController,
                     onLogout = {
                         navController.navigate("login") {
                             popUpTo("adminHome") { inclusive = true }

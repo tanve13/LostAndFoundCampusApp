@@ -157,7 +157,6 @@ fun MainNavigation(navController: NavHostController, rootNavController: NavHostC
 
     Scaffold(
         bottomBar = {
-            // Hide nav bar on "chat" & "post" screen
             if (currentRoute != BottomNavItems.Post.route && (currentRoute?.startsWith("chat") == false)) {
                 BottomNavigationBar(navController)
             }

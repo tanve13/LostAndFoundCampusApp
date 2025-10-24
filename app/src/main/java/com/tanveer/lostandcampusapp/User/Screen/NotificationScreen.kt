@@ -22,8 +22,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.tanveer.lostandcampusapp.model.NotificationDataClass
 import com.tanveer.lostandcampusapp.viewModel.UserViewModel
-
-
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)

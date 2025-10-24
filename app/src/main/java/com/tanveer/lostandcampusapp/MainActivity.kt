@@ -108,7 +108,6 @@ class MainActivity : ComponentActivity() {
 
             composable("userHome") {
                 val userNavController = rememberNavController()
-
                 MainNavigation(
                     userNavController, rootNavController = navController,
                     isDarkTheme = isDarkTheme,
@@ -117,7 +116,9 @@ class MainActivity : ComponentActivity() {
             }
             composable("adminHome") {
                 val adminNavController = rememberNavController()
-                AdminNavigation(adminNavController)
+                AdminNavigation(adminNavController,
+                    rootNavController = navController
+                )
             }
         }
     }

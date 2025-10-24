@@ -16,7 +16,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Divider
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -49,10 +51,13 @@ import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.tanveer.lostandcampusapp.data.FileUtils
 import com.tanveer.lostandcampusapp.Admin.AdminModel.AdminViewModel
+import com.tanveer.lostandcampusapp.data.AuthRepo
 
 @Composable
 fun SettingScreen(
     adminViewModel: AdminViewModel = hiltViewModel(),
+    adminRegNo: String,
+    rootNavController: NavHostController,
     navController: NavHostController,
     onLogout: () -> Unit
 ) {
@@ -79,13 +84,14 @@ fun SettingScreen(
     }
 
     LaunchedEffect(Unit) {
-        adminViewModel.fetchAdminInfo()
+        adminViewModel.fetchAdminProfile(adminRegNo)
         adminViewModel.fetchStats()
     }
 
     Column(
         Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(20.dp)
     ) {
         Box(
@@ -129,8 +135,8 @@ fun SettingScreen(
         }
 
         Spacer(Modifier.height(12.dp))
-        Text(user?.userName ?: "Admin", fontWeight = FontWeight.Bold, fontSize = 22.sp, modifier = Modifier.align(Alignment.CenterHorizontally))
-        Text(user?.email ?: "No Email", color = Color.Gray, fontSize = 14.sp, modifier = Modifier.align(Alignment.CenterHorizontally))
+        Text(adminViewModel.adminName.value, fontWeight = FontWeight.Bold, fontSize = 22.sp, modifier = Modifier.align(Alignment.CenterHorizontally))
+        Text(adminViewModel.adminEmail.value, color = Color.Gray, fontSize = 14.sp, modifier = Modifier.align(Alignment.CenterHorizontally))
         Spacer(Modifier.height(24.dp))
 
         Row(
@@ -177,9 +183,9 @@ fun SettingScreen(
             text = { Text("Are you sure you want to logout?") },
             confirmButton = {
                 TextButton(onClick = {
-                    adminViewModel.logout {
-                        showLogoutDialog = false
-                        onLogout()
+                    AuthRepo.logout()
+                    rootNavController.navigate("login") {
+                        popUpTo("adminHome") { inclusive = true }
                     }
                 }) { Text("Yes") }
             },
