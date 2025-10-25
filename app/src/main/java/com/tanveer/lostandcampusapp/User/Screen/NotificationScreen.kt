@@ -194,7 +194,7 @@ fun SwipeToDismissBox(
         confirmValueChange = { value ->
             if (value == SwipeToDismissBoxValue.EndToStart) {
                 onDismiss()
-                false // Prevent state from auto-settling
+                false
             } else true
         }
     )
@@ -222,7 +222,6 @@ fun SwipeToDismissBox(
         content = { content() }
     )
 }
-
 @Composable
 fun NotificationCardLinkedInStyle(
     notification: NotificationDataClass,
@@ -236,7 +235,7 @@ fun NotificationCardLinkedInStyle(
 
     val emoji = when (notification.type.lowercase()) {
         "found" -> "🔎"
-        "lost" -> "❓"
+        "lost" -> "🚨"  // Changed from ❓ to 🚨
         else -> ""
     }
 
@@ -276,7 +275,11 @@ fun NotificationCardLinkedInStyle(
                         Text("$emoji ", fontWeight = FontWeight.Bold)
                     }
                     Text(
-                        text = notification.title.removePrefix("🔎 ").removePrefix("❓ "),
+                        text = notification.title
+                            .replace("🔎", "")
+                            .replace("❓", "")
+                            .replace("🚨", "")  // Add new emoji to clean
+                            .trim(),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = Color.Black,
@@ -288,7 +291,8 @@ fun NotificationCardLinkedInStyle(
                 Text(
                     text = notification.message
                         .replace("🔎", "")
-                        .replace("❓", ""),
+                        .replace("❓", "")
+                        .replace("🚨", ""),  // Clean from message too
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.DarkGray,
                     maxLines = 2,
@@ -311,6 +315,7 @@ fun NotificationCardLinkedInStyle(
         }
     }
 }
+
 
 
 

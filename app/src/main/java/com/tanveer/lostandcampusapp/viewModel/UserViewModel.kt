@@ -1,10 +1,12 @@
 package com.tanveer.lostandcampusapp.viewModel
 
+import android.app.Application
 import android.content.Context
 import android.net.Uri
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.runtime.mutableStateOf
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
@@ -31,9 +33,14 @@ import java.io.File
 import java.io.IOException
 import java.util.UUID
 
-class UserViewModel : ViewModel() {
-    var name = mutableStateOf("")
-    var regNo = mutableStateOf("")
+class UserViewModel(application: Application): AndroidViewModel(application) {
+    private val sharedPref = application.getSharedPreferences("UserSession", Context.MODE_PRIVATE)
+
+    // ✅ Get saved user data
+    private val savedRegNo = sharedPref.getString("regNo", "") ?: ""
+    private val savedName = sharedPref.getString("name", "") ?: ""
+    var name = mutableStateOf(savedName)
+    var regNo = mutableStateOf(savedRegNo)
     var bio = mutableStateOf("")
     var profileImageUrl = mutableStateOf("")
 
@@ -275,7 +282,7 @@ class UserViewModel : ViewModel() {
    ////to send notification ....
     fun sendPostNotification(postType: String, title: String, message: String) {
        val emoji = when(postType.lowercase()) {
-           "lost" -> "\uD83D\u2753"  // ❓ (Question Mark)
+           "lost" -> "\uD83D\uDEA8"  // ❓ (Question Mark)
            "found" -> "\uD83D\uDD0E" // 🔎 Magnifying Glass emoji (Found)
            else -> ""
        }

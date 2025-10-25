@@ -173,9 +173,11 @@ fun UserProfileScreen(
             text = { Text("Are you sure you want to logout?") },
             confirmButton = {
                 TextButton(onClick = {
-                    AuthRepo.logout()
+                    AuthRepo.logout(context)
                     rootNavController.navigate("login") {
-                        popUpTo("userHome") { inclusive = true }
+//                        popUpTo("userHome") { inclusive = true }
+                        popUpTo(0) { inclusive = true }
+
                     }
                 }) { Text("Yes") }
             },

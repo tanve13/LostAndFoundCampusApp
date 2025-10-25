@@ -78,7 +78,7 @@ class AdminViewModel @Inject constructor(
     fun fetchClaimRequests() {
         _isClaimLoading.value = true
         viewModelScope.launch {
-            val claims = repository.getAllClaimRequests() // fetch from server/db
+            val claims = repository.getAllClaimRequests()
             _claimRequests.value = claims
             filterClaims()
             _isClaimLoading.value = false

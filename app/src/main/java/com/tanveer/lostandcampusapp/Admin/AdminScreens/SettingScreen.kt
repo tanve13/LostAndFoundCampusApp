@@ -183,9 +183,11 @@ fun SettingScreen(
             text = { Text("Are you sure you want to logout?") },
             confirmButton = {
                 TextButton(onClick = {
-                    AuthRepo.logout()
+                    AuthRepo.logout(context)
                     rootNavController.navigate("login") {
-                        popUpTo("adminHome") { inclusive = true }
+//                        popUpTo("adminHome") { inclusive = true }
+                        popUpTo(0) { inclusive = true }
+
                     }
                 }) { Text("Yes") }
             },

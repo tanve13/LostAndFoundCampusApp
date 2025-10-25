@@ -1,5 +1,6 @@
 package com.tanveer.lostandcampusapp
 
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -64,12 +65,24 @@ class MainActivity : ComponentActivity() {
         isDarkTheme: Boolean,
         onThemeChange: (Boolean) -> Unit
     ) {
+        val context = LocalContext.current
         val navController = rememberNavController()
         val currentUser = FirebaseAuth.getInstance().currentUser
-
+        // ✅ Check saved session
+        val sharedPref = context.getSharedPreferences("UserSession", Context.MODE_PRIVATE)
+        val isLoggedIn = sharedPref.getBoolean("isLoggedIn", false)
+        val savedRole = sharedPref.getString("role", "user")
+        // ✅ Determine start destination based on session
+        val startDestination = when {
+            !isLoggedIn -> "signup"
+            savedRole == "admin" -> "adminHome"
+            else -> "userHome"
+        }
         NavHost(
             navController = navController,
-            startDestination = if (currentUser != null) "userHome" else "signup"
+//            startDestination = if (currentUser != null) "userHome" else "signup"
+            startDestination = startDestination
+
         ) {
             composable("signup") {
                 SignUpScreen(

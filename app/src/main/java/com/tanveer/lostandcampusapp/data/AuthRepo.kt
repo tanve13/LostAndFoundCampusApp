@@ -1,7 +1,6 @@
 package com.tanveer.lostandcampusapp.data
 
 import android.content.Context
-import android.widget.Toast
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
@@ -60,6 +59,14 @@ object AuthRepo {
                     if (!email.isNullOrBlank()) {
                         auth.signInWithEmailAndPassword(email, password)
                             .addOnSuccessListener {
+                                val sharedPref = context.getSharedPreferences("UserSession", Context.MODE_PRIVATE)
+                                sharedPref.edit().apply {
+                                    putString("regNo", regNo)
+                                    putString("name", name)
+                                    putString("role", role)
+                                    putBoolean("isLoggedIn", true)
+                                    apply()
+                                }
                                 onSuccess(name, regNo,role)
                             }
                             .addOnFailureListener { e ->
@@ -107,7 +114,9 @@ object AuthRepo {
             }
     }
 
-    fun logout() {
+    fun logout(context: Context) {
         auth.signOut()
+        val sharedPref = context.getSharedPreferences("UserSession", Context.MODE_PRIVATE)
+        sharedPref.edit().clear().apply()
     }
 }
