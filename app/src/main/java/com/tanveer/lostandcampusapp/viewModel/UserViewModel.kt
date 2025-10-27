@@ -103,7 +103,9 @@ class UserViewModel(application: Application): AndroidViewModel(application) {
     fun fetchUserStats(userRegNo: String) {
         viewModelScope.launch {
             try {
-                _userStats.value = statsRepository.getUserStats(userRegNo)
+                val regNo = regNo.value // <-- userViewModel.regNo.value hona chahiye, not uid
+                Log.d("PROFILE_SCREEN", "FETCHING STATS FOR: $regNo")
+                _userStats.value = statsRepository.getUserStats(regNo)
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -111,8 +113,8 @@ class UserViewModel(application: Application): AndroidViewModel(application) {
     }
     // 🧠 Update Firestore user profile data
     private fun updateUserProfileField(field: String, value: Any) {
-        val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
-        firestore.collection("users").document(uid)
+        val regNo = regNo.value
+        firestore.collection("users").document(regNo)
             .update(field, value)
             .addOnFailureListener { Log.e("UserViewModel", "Failed to update $field: ${it.message}") }
     }
@@ -188,7 +190,6 @@ class UserViewModel(application: Application): AndroidViewModel(application) {
         CloudinaryHelper.uploadImage(imageFile) { success, url ->
             if (success && url != null) {
                 viewModelScope.launch {
-//                    val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return@launch
                     val currentUser = FirebaseAuth.getInstance().currentUser
                     Log.d("SubmitPost", "CurrentUser = $currentUser")
 
@@ -255,7 +256,7 @@ class UserViewModel(application: Application): AndroidViewModel(application) {
             loadAllPosts()
         }
     }
-///je item claim krne ke liea....
+   //je item claim krne ke liea....
     fun claimPost(
         postId: String,
         claimerId: String,

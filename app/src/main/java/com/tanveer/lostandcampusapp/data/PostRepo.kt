@@ -12,29 +12,6 @@ object PostRepo {
     private val db = FirebaseFirestore.getInstance()
     private val postsCollection = db.collection("posts")
 
-    suspend fun createPost(
-        category: String,
-        title: String,
-        description: String,
-        location: String,
-        imageUrl: String? = null
-    ) {
-        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
-        val postId = postsCollection.document().id
-        val post = Post(
-            id = postId,
-            userId = userId,
-            category = category,
-            title = title,
-            description = description,
-            location = location,
-            imageUrl = imageUrl,
-            timestamp = System.currentTimeMillis()
-
-        )
-        postsCollection.document(postId).set(post).await()
-    }
-
     fun getAllPosts(): Flow<List<Post>> = callbackFlow {
         val listener = postsCollection.addSnapshotListener { snapshot, e ->
             if (e != null) {
@@ -51,10 +28,10 @@ object PostRepo {
         awaitClose { listener.remove() }
     }
 
-    suspend fun getMyPosts(userRegNo: String): List<Post> {
+    suspend fun getMyPosts(userId: String): List<Post> {
         val db = FirebaseFirestore.getInstance()
         val snapshot = db.collection("posts")
-            .whereEqualTo("userRegNo", userRegNo)
+            .whereEqualTo("userId", userId)
             .get()
             .await()
 

@@ -1,6 +1,7 @@
 package com.tanveer.lostandcampusapp.data
 
 
+import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
@@ -8,23 +9,28 @@ import javax.inject.Inject
 class StatsRepository @Inject constructor() {
     private val db = FirebaseFirestore.getInstance()
 
-    suspend fun getUserStats(userId: String): UserStats {
-        // Get user's posts count
+    suspend fun getUserStats(userRegNo: String): UserStats {
         val postsQuery = db.collection("posts")
-            .whereEqualTo("userId", userId)
-        val postsSnapshot = postsQuery.get().await()
-
-        val lostPosts = postsSnapshot.count { it.getString("type") == "lost" }
-        val foundPosts = postsSnapshot.count { it.getString("type") == "found" }
+            .whereEqualTo("userRegNo", userRegNo)
+        val postsSnapshot = db.collection("posts")
+            .whereEqualTo("userRegNo", userRegNo)
+            .get().await()
+        postsSnapshot.forEach { doc ->
+            Log.d("STATS_DBG", "Post data: ${doc.data}")
+        }
+        val lostPosts = postsSnapshot.count { it.getString("category")?.lowercase() == "lost" }
+        val foundPosts = postsSnapshot.count { it.getString("category")?.lowercase() == "found" }
         val totalPosts = postsSnapshot.size()
-
-        // Get user's claims count
         val claimsQuery = db.collection("claims")
-            .whereEqualTo("userId", userId)
+            .whereEqualTo("userId", userRegNo)
         val claimsSnapshot = claimsQuery.get().await()
         val claimsCount = claimsSnapshot.size()
 
-        return UserStats(totalPosts, lostPosts, foundPosts, claimsCount)
+//        return UserStats(totalPosts, lostPosts, foundPosts, claimsCount)
+        val userStats = UserStats(totalPosts, lostPosts, foundPosts, claimsCount)
+        Log.d("STATS_DBG", "Calculated UserStats: $userStats")
+        return userStats
+
     }
 }
 

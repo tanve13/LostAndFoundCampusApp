@@ -1,5 +1,6 @@
 package com.tanveer.lostandcampusapp.User.Screen
 
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -16,6 +17,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -40,9 +42,7 @@ fun UserProfileScreen(
     var showLogoutDialog by remember { mutableStateOf(false) }
     var showChangePasswordDialog by remember { mutableStateOf(false) }
     var showEditProfileDialog by remember { mutableStateOf(false) }
-      var showProfileDialog by remember { mutableStateOf(false) }
-
-    val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+    var showProfileDialog by remember { mutableStateOf(false) }
     val profileUrl = userViewModel.profileImageUrl.value
 
     // Load user data from DataStore
@@ -50,9 +50,10 @@ fun UserProfileScreen(
         val (savedName, savedRegNo) = DataStoreManager.getUserData(context)
         userViewModel.setUserData(savedName, savedRegNo)
         // Fetch user stats
-        if (currentUserId.isNotEmpty()) {
-            userViewModel.fetchUserStats(currentUserId)
+        if (savedRegNo.isNotEmpty()) {
+            userViewModel.fetchUserStats(savedRegNo)
         }
+
     }
     val userStats by userViewModel.userStats.collectAsState()
 
@@ -121,10 +122,10 @@ fun UserProfileScreen(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceAround
         ) {
-            StatCard("Total", userStats.totalPosts)
-            StatCard("Lost", userStats.lostPosts)
-            StatCard("Found", userStats.foundPosts)
-            StatCard("Claims", userStats.claimsMade)
+            StatCard("Total", userStats.totalPosts,Color(0xFFE5F3FF))
+            StatCard("Lost", userStats.lostPosts,Color(0xFFE5F3FF))
+            StatCard("Found", userStats.foundPosts, Color(0xFFE5F3FF))
+            StatCard("Claims", userStats.claimsMade,Color(0xFFE5F3FF))
         }
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -231,18 +232,18 @@ fun UserProfileScreen(
 
 // === Reusable Components ===
 @Composable
-fun StatCard(title: String, count: Int) {
+fun StatCard(title: String, count: Int,color: Color) {
     Card(
         modifier = Modifier.size(80.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        colors = CardDefaults.cardColors(containerColor = color)
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("$count", fontWeight = FontWeight.Bold)
-            Text(title, style = MaterialTheme.typography.bodySmall)
+            Text("$count", fontWeight = FontWeight.Bold,color = Color.Black)
+            Text(title, style = MaterialTheme.typography.bodySmall,color = Color.Black.copy(alpha = 0.92f))
         }
     }
 }
