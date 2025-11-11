@@ -25,6 +25,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.tanveer.lostandcampusapp.User.Screen.ChatScreen
 import com.tanveer.lostandcampusapp.User.Screen.ClaimScreen
 import com.tanveer.lostandcampusapp.User.Screen.HomeScreen
+import com.tanveer.lostandcampusapp.User.Screen.ItemsDetailsScreen
 import com.tanveer.lostandcampusapp.User.Screen.NotificationScreen
 import com.tanveer.lostandcampusapp.User.Screen.PostScreen
 import com.tanveer.lostandcampusapp.User.Screen.UserMyPostScreen
@@ -102,6 +103,11 @@ fun BottomNavigation(
                 postOwnerName = postOwnerName
             )
         }
+        composable("postDetails/{postId}") { backStackEntry ->
+            val postId = backStackEntry.arguments?.getString("postId") ?: ""
+            ItemsDetailsScreen(postId = postId, viewModel = userViewModel, navController = navController)
+        }
+
 
 
     }
