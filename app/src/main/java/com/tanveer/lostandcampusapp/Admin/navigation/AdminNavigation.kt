@@ -57,7 +57,9 @@ fun AdminNavigation(navController : NavHostController, rootNavController: NavHos
             startDestination = AdminNavItem.Dashboard.route,
             modifier = Modifier.padding(padding)
         ) {
-            composable(AdminNavItem.Dashboard.route) { AdminHomeScreen() }
+            composable(AdminNavItem.Dashboard.route) {
+                val regNo = "12200672"
+                AdminHomeScreen( adminRegNo = regNo) }
             composable(AdminNavItem.AllPosts.route) { AllPostsScreen() }
             composable(AdminNavItem.Claims.route) { AdminClaimsScreen() }
             composable(AdminNavItem.Settings.route){

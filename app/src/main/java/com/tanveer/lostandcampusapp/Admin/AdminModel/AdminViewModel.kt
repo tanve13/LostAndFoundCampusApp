@@ -50,6 +50,12 @@ class AdminViewModel @Inject constructor(
     var mostCommonCategory by mutableStateOf<Pair<String, Int>?>(null)
     var weeklyPosts by mutableStateOf(listOf(0, 0, 0, 0, 0, 0, 0))
     var weekLabels by mutableStateOf(listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"))
+    var monthlyPosts by mutableStateOf<List<Int>>(listOf())
+    var monthLabels by mutableStateOf(
+        listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+    )
+    var yearlyPosts by mutableStateOf<List<Int>>(emptyList())
+    var yearLabels by mutableStateOf<List<String>>(emptyList())
 
     // for allpost screen
     var allPosts by mutableStateOf<List<Post>>(emptyList())
@@ -191,6 +197,33 @@ class AdminViewModel @Inject constructor(
                     ((it.timestamp - weekAgo) / dayMillis).toInt()
                 }
             weeklyPosts = (0..6).map { day -> grouped[day]?.size ?: 0 }
+            // Monthly post distribution (current year)
+            val currentYear = cal.get(java.util.Calendar.YEAR)
+
+            val monthlyGrouped = posts
+                .filter {
+                    val postCal = java.util.Calendar.getInstance()
+                    postCal.timeInMillis = it.timestamp
+                    postCal.get(java.util.Calendar.YEAR) == currentYear
+                }
+                .groupBy {
+                    val postCal = java.util.Calendar.getInstance()
+                    postCal.timeInMillis = it.timestamp
+                    postCal.get(java.util.Calendar.MONTH)
+                }
+
+            monthlyPosts = (0..11).map { month -> monthlyGrouped[month]?.size ?: 0 }
+          // Yearly post distribution (last few years)
+            val yearlyGrouped = posts.groupBy {
+                val cal = java.util.Calendar.getInstance()
+                cal.timeInMillis = it.timestamp
+                cal.get(java.util.Calendar.YEAR)
+            }
+
+            val sortedYears = yearlyGrouped.keys.sorted()
+            yearLabels = sortedYears.map { it.toString() }
+            yearlyPosts = sortedYears.map { year -> yearlyGrouped[year]?.size ?: 0 }
+
         }
     }
 

@@ -4,17 +4,27 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Assessment
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.DoneAll
+import androidx.compose.material.icons.filled.HourglassEmpty
+import androidx.compose.material.icons.filled.ReportProblem
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import com.github.mikephil.charting.charts.LineChart
 import com.github.mikephil.charting.components.Description
 import com.github.mikephil.charting.components.XAxis
@@ -25,12 +35,18 @@ import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
 import androidx.compose.ui.viewinterop.AndroidView
 import com.tanveer.lostandcampusapp.Admin.AdminModel.AdminViewModel
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.google.firebase.auth.FirebaseAuth
 
 @Composable
 fun AdminHomeScreen(
-    adminViewModel: AdminViewModel = hiltViewModel()
+    adminViewModel: AdminViewModel = hiltViewModel(),
+    adminRegNo: String,
 ) {
     LaunchedEffect(Unit) {
+        val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
+        if (currentUserId != null) {
+            adminViewModel.fetchAdminProfile(adminRegNo)
+        }
         adminViewModel.fetchAdminStats()
     }
     val totalPosts = adminViewModel.totalPosts
@@ -49,38 +65,80 @@ fun AdminHomeScreen(
         Box(
             Modifier
                 .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.primaryContainer)
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(Color.Black, Color(0xFF333333))
+                    )
+                )
                 .padding(vertical = 18.dp)
         ) {
-            Text(
-                text = "Admin Dashboard",
-                style = MaterialTheme.typography.titleLarge.copy(
-                    fontSize = 24.sp,
+            Column {
+                Text(
+                    "Hello, ${adminViewModel.adminName.value.ifEmpty { "Admin" }} 👋",
+                    color = Color.White,
+                    fontSize = 22.sp,
                     fontWeight = FontWeight.Bold
-                ),
-                modifier = Modifier.align(Alignment.Center)
-            )
+                )
+                Text(
+                    "Welcome back to your dashboard",
+                    color = Color.White.copy(alpha = 0.9f),
+                    fontSize = 14.sp
+                )
+            }
         }
+        Spacer(Modifier.height(16.dp))
         Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(18.dp)
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
 
-            Row(Modifier.fillMaxWidth(),horizontalArrangement = Arrangement.spacedBy(12.dp)
+            Row(
+                Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                StatCard("Total", totalPosts, MaterialTheme.colorScheme.primary)
-                StatCard("Lost", lostPosts, Color.Red)
-                StatCard("Found", foundPosts, Color.Green)
+                StatCard(
+                    "Total",
+                    totalPosts,
+                    MaterialTheme.colorScheme.primary,
+                    Icons.Default.Assessment,
+                    modifier = Modifier.weight(1f)
+                )
+                StatCard(
+                    "Lost",
+                    lostPosts,
+                    Color.Red,
+                    Icons.Default.ReportProblem,
+                    modifier = Modifier.weight(1f)
+                )
+                StatCard(
+                    "Found",
+                    foundPosts,
+                    Color.Green,
+                    Icons.Default.CheckCircle,
+                    modifier = Modifier.weight(1f)
+                )
             }
             Spacer(Modifier.height(12.dp))
 
-            Row(Modifier.fillMaxWidth(),horizontalArrangement = Arrangement.spacedBy(12.dp)
+            Row(
+                Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                StatCard("Pending", pendingClaims, Color(0xFFFF9800))
-                StatCard("Resolved", resolvedCases, Color(0xFF4CAF50))
+                StatCard(
+                    "Pending",
+                    pendingClaims,
+                    Color(0xFFFF9800),
+                    Icons.Default.HourglassEmpty,
+                    modifier = Modifier.weight(1f)
+                )
+                StatCard(
+                    "Resolved",
+                    resolvedCases,
+                    Color(0xFF4CAF50),
+                    Icons.Default.DoneAll,
+                    modifier = Modifier.weight(1f)
+                )
             }
             Spacer(Modifier.height(24.dp))
             // -- Users --
@@ -167,32 +225,60 @@ fun AdminHomeScreen(
 
 
 @Composable
-fun StatCard(title: String, count: Int, color: Color) {
+fun StatCard(
+    title: String,
+    count: Int,
+    color: Color,
+    icon: ImageVector,
+    modifier: Modifier = Modifier
+) {
     Card(
-        modifier = Modifier
-            .size(110.dp)
-            .padding(4.dp),
-        colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.1f))
+        modifier = modifier
+//            .height(110.dp)
+            .size(110.dp) .padding(4.dp),
+        colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.1f)),
+//        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp) // soft shadow
     ) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
+        Row(
+            modifier = Modifier
+                .fillMaxSize(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = count.toString(),
-                fontWeight = FontWeight.Bold,
-                fontSize = 22.sp,
-                color = color
-            )
-            Text(
-                text = title,
-                fontSize = 14.sp,
-                color = MaterialTheme.colorScheme.onSurface
-            )
+            Column {
+                Text(
+                    text = title,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    text = count.toString(),
+                    color = color,
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            // Circle background for icon
+            Box(
+                modifier = Modifier
+                    .size(42.dp)
+                    .background(color.copy(alpha = 0.15f), shape = CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = title,
+                    tint = color,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
         }
     }
 }
+
+
 @Composable
 fun LostFoundPieChart(lostCount: Int, foundCount: Int, modifier: Modifier = Modifier) {
     val total = lostCount + foundCount
@@ -226,7 +312,11 @@ fun LostFoundPieChart(lostCount: Int, foundCount: Int, modifier: Modifier = Modi
         // Center label (optional)
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text("L/F", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-            Text("${if (total == 0) 0 else (foundCount * 100 / total)}%", fontSize = 16.sp, color = pastelBlue)
+            Text(
+                "${if (total == 0) 0 else (foundCount * 100 / total)}%",
+                fontSize = 16.sp,
+                color = pastelBlue
+            )
         }
     }
 }
