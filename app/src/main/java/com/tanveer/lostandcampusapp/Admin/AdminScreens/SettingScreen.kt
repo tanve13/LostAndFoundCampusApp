@@ -77,7 +77,7 @@ fun SettingScreen(
             CloudinaryHelper.uploadImage(file) { success, url ->
                 if (success && url != null) {
                     // Profile update: Id, name, email (old values from user data), new photoUri is NULL, url as update info
-                    adminViewModel.updateProfile(context, user?.id ?: "", user?.userName ?: "", user?.email ?: "", uri)
+                    adminViewModel.updateProfile(context, user?.regNo ?: "", user?.name ?: "", user?.email ?: "", uri)
                 }
             }
         }

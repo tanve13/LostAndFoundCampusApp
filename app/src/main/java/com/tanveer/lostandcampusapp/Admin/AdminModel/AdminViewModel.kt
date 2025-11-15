@@ -36,6 +36,10 @@ class AdminViewModel @Inject constructor(
     var profileUrl by mutableStateOf<String?>(null)
     var deletedPosts by mutableStateOf(0)
 
+    // New mutable state for all users
+    var allUsers by mutableStateOf<List<ProfileDataClass>>(emptyList())
+        private set
+
     // State for dashboard
     var totalPosts by mutableStateOf(0)
     var lostPosts by mutableStateOf(0)
@@ -89,6 +93,22 @@ class AdminViewModel @Inject constructor(
             filterClaims()
             _isClaimLoading.value = false
         }
+    }
+    // FUNCTION TO LOAD USERS
+    fun fetchAllUsers() {
+        isLoading = true
+        firestore.collection("users")
+            .get()
+            .addOnSuccessListener { query ->
+                allUsers = query.documents.mapNotNull { it.toObject(ProfileDataClass::class.java) }
+                isLoading = false
+            }
+            .addOnFailureListener {
+                isLoading = false
+            }
+    }
+    fun getPostsByUserRegNo(regNo: String): List<Post> {
+        return allPosts.filter { it.userRegNo == regNo }
     }
 
     fun fetchAdminProfile(regNo: String) {

@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -16,9 +17,12 @@ import androidx.compose.material.icons.filled.ReportProblem
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -40,7 +44,8 @@ import com.google.firebase.auth.FirebaseAuth
 @Composable
 fun AdminHomeScreen(
     adminViewModel: AdminViewModel = hiltViewModel(),
-    adminRegNo: String,
+    adminRegNo: String, onUsersClick: () -> Unit,
+    onTopContributorClick: () -> Unit
 ) {
     LaunchedEffect(Unit) {
         val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
@@ -101,21 +106,18 @@ fun AdminHomeScreen(
                 StatCard(
                     "Total",
                     totalPosts,
-                    MaterialTheme.colorScheme.primary,
                     Icons.Default.Assessment,
                     modifier = Modifier.weight(1f)
                 )
                 StatCard(
                     "Lost",
                     lostPosts,
-                    Color.Red,
                     Icons.Default.ReportProblem,
                     modifier = Modifier.weight(1f)
                 )
                 StatCard(
                     "Found",
                     foundPosts,
-                    Color.Green,
                     Icons.Default.CheckCircle,
                     modifier = Modifier.weight(1f)
                 )
@@ -128,29 +130,48 @@ fun AdminHomeScreen(
                 StatCard(
                     "Pending",
                     pendingClaims,
-                    Color(0xFFFF9800),
                     Icons.Default.HourglassEmpty,
                     modifier = Modifier.weight(1f)
                 )
                 StatCard(
                     "Resolved",
                     resolvedCases,
-                    Color(0xFF4CAF50),
                     Icons.Default.DoneAll,
                     modifier = Modifier.weight(1f)
                 )
             }
             Spacer(Modifier.height(24.dp))
             // -- Users --
+            val userCardGradient = Brush.horizontalGradient(
+                listOf(Color(0xFFF5F5F5), Color(0xFFFFFFFF)) // Very light gray to pure white
+            )
+
+
+
+            val contributorCardGradient = Brush.horizontalGradient(
+                listOf(Color(0xFFE0E0E0), Color(0xFFFCFCFC)) // Silver-ish to white
+            )
+
+
             Card(
-                Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp),
+                Modifier
+                    .fillMaxWidth()
+                    .clickable { onUsersClick() },
+                shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = skyBlue)
             ) {
-                Column(Modifier.padding(16.dp)) {
-                    Text("App Users", fontWeight = FontWeight.Bold)
-                    Spacer(Modifier.height(4.dp))
-                    Text("Total Registered: $totalUsers")
-                    Text("New This Week: $newUsers", color = Color(0xFF1976D2))
+                Box(
+                    Modifier
+                        .background(userCardGradient)
+                        .fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(Modifier.padding(16.dp)) {
+                        Text("App Users", fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.height(4.dp))
+                        Text("Total Registered: $totalUsers")
+                        Text("New This Week: $newUsers", color = Color(0xFF1976D2))
+                    }
                 }
             }
             // -- Most Common Item Category --
@@ -174,15 +195,22 @@ fun AdminHomeScreen(
                 Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = skyBlue)
             ) {
-                Column(Modifier.padding(16.dp)) {
-                    Text("Top Contributor", fontWeight = FontWeight.Bold)
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        mostActive?.first ?: "N/A",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = Color(0xFF1976D2)
-                    )
-                    Text("${mostActive?.second ?: "--"} posts this week")
+                Box(
+                    Modifier
+                        .background(contributorCardGradient)
+                        .fillMaxWidth().clickable { onTopContributorClick() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(Modifier.padding(16.dp)) {
+                        Text("Top Contributor", fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            mostActive?.first ?: "N/A",
+                            style = MaterialTheme.typography.titleLarge,
+                            color = Color(0xFF1976D2)
+                        )
+                        Text("${mostActive?.second ?: "--"} posts this week")
+                    }
                 }
             }
             Row(
@@ -191,8 +219,30 @@ fun AdminHomeScreen(
                     .padding(vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                LostFoundPieChart(lostCount, foundCount, Modifier.weight(1f))
+                var showPieDialog by remember { mutableStateOf(false) }
+                LostFoundPieChart(
+                    lostCount,
+                    foundCount,
+                    modifier = Modifier.weight(1f).clickable{showPieDialog = true}
+                )
                 Spacer(Modifier.width(8.dp))
+                if (showPieDialog) {
+                    AlertDialog(
+                        onDismissRequest = { showPieDialog = false },
+                        // Use a larger PieChart here, and display clear numbers:
+                        text = {
+                            Column {
+                                Text("Lost vs Found & Claims")
+                                PieChartLarge( lostCount = adminViewModel.lostCount,
+                                    foundCount = adminViewModel.foundCount,
+                                    resolvedCount = adminViewModel.resolvedCases,
+                                    pendingCount = adminViewModel.pendingClaims)
+
+                            }
+                        },
+                        confirmButton = { Button(onClick = { showPieDialog = false }) { Text("Close") } }
+                    )
+                }
                 Card(
                     Modifier
                         .weight(2f)
@@ -223,55 +273,115 @@ fun AdminHomeScreen(
     }
 }
 
+@Composable
+fun PieChartLarge(
+    lostCount: Int,
+    foundCount: Int,
+    resolvedCount: Int,
+    pendingCount: Int
+) {
+    val total = lostCount + foundCount
+    val lostRatio = if (total == 0) 0f else lostCount.toFloat() / total
+    val foundRatio = if (total == 0) 0f else foundCount.toFloat() / total
+
+    val lostColor = Color(0xFFD32F2F)
+    val foundColor = Color(0xFF388E3C)
+    val resolvedColor = Color(0xFF1976D2)
+    val pendingColor = Color(0xFFFFC107)
+
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(
+            modifier = Modifier
+                .size(220.dp)
+                .padding(12.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Canvas(modifier = Modifier.matchParentSize()) {
+                val sweepLost = 360f * lostRatio
+                val sweepFound = 360f * foundRatio
+
+                drawArc(
+                    color = lostColor,
+                    startAngle = -90f,
+                    sweepAngle = sweepLost,
+                    useCenter = true
+                )
+                drawArc(
+                    color = foundColor,
+                    startAngle = -90f + sweepLost,
+                    sweepAngle = sweepFound,
+                    useCenter = true
+                )
+                // Optionally add more segments for resolved/pending
+            }
+            // Add proud numbers in center
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("Lost & Found Ratio", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                Text("Lost: $lostCount", color = lostColor)
+                Text("Found: $foundCount", color = foundColor)
+                Text("Resolved: $resolvedCount", color = resolvedColor)
+                Text("Pending: $pendingCount", color = pendingColor)
+                if (total > 0)
+                    Text("Found %: ${(foundCount * 100 / total)}%", fontWeight = FontWeight.Bold)
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+        // Optionally show a legend
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text("● Lost", color = lostColor)
+            Text("● Found", color = foundColor)
+            // Add more for resolved, pending
+        }
+    }
+}
 
 @Composable
 fun StatCard(
     title: String,
     count: Int,
-    color: Color,
     icon: ImageVector,
     modifier: Modifier = Modifier
 ) {
     Card(
         modifier = modifier
-//            .height(110.dp)
-            .size(110.dp) .padding(4.dp),
-        colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.1f)),
-//        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp) // soft shadow
+            .size(110.dp)
+            .padding(4.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.Transparent // gradient will be used below
+        ),
+        shape = RoundedCornerShape(15.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
     ) {
-        Row(
+        Box(
             modifier = Modifier
-                .fillMaxSize(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+                .fillMaxSize()
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(Color.Black, Color.White),
+                        startY = 0f,
+                        endY = 220f
+                    )
+                ),
+            contentAlignment = Alignment.Center
         ) {
-            Column {
-                Text(
-                    text = title,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium
-                )
-                Text(
-                    text = count.toString(),
-                    color = color,
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-
-            // Circle background for icon
-            Box(
-                modifier = Modifier
-                    .size(42.dp)
-                    .background(color.copy(alpha = 0.15f), shape = CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Icon(
                     imageVector = icon,
                     contentDescription = title,
-                    tint = color,
-                    modifier = Modifier.size(22.dp)
+                    tint = Color.White,
+                    modifier = Modifier.size(28.dp)
+                )
+                Text(
+                    title,
+                    color = Color.White,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    count.toString(),
+                    color = Color.White,
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold
                 )
             }
         }
