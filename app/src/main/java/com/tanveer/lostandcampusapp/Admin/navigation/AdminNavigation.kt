@@ -20,6 +20,7 @@ import androidx.navigation.navArgument
 import com.tanveer.lostandcampusapp.Admin.AdminModel.AdminViewModel
 import com.tanveer.lostandcampusapp.Admin.AdminScreens.AdminClaimsScreen
 import com.tanveer.lostandcampusapp.Admin.AdminScreens.AdminHomeScreen
+import com.tanveer.lostandcampusapp.Admin.AdminScreens.AdminNotificationScreen
 import com.tanveer.lostandcampusapp.Admin.AdminScreens.AllPostsScreen
 import com.tanveer.lostandcampusapp.Admin.AdminScreens.ContributorOverviewScreen
 import com.tanveer.lostandcampusapp.Admin.AdminScreens.ContributorPostsScreen
@@ -71,12 +72,19 @@ fun AdminNavigation(
             modifier = Modifier.padding(padding)
         ) {
             composable(AdminNavItem.Dashboard.route) {
-                AdminHomeScreen(adminViewModel,
+                AdminHomeScreen( navController = navController,adminViewModel,
                     adminRegNo = "12200672", // pass actual regNo,
                     onUsersClick = { navController.navigate("registered_users") },
                     onTopContributorClick = { navController.navigate("contributors") }
                 )
             }
+            composable("admin_notifications") {
+                AdminNotificationScreen(
+                    adminViewModel = adminViewModel,
+                    onBack = { navController.popBackStack() }
+                )
+            }
+
             composable("registered_users") {
                 RegisteredUsersScreen(
                     adminViewModel = adminViewModel,

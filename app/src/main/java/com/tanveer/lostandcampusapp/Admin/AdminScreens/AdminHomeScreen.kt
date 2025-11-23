@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.HourglassEmpty
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.ReportProblem
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -41,13 +42,14 @@ import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
 import androidx.compose.ui.viewinterop.AndroidView
 import com.tanveer.lostandcampusapp.Admin.AdminModel.AdminViewModel
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
 import com.google.firebase.auth.FirebaseAuth
 
 @Composable
-fun AdminHomeScreen(
-    adminViewModel: AdminViewModel = hiltViewModel(),
-    adminRegNo: String, onUsersClick: () -> Unit,
-    onTopContributorClick: () -> Unit
+fun AdminHomeScreen(navController: NavController,
+                    adminViewModel: AdminViewModel = hiltViewModel(),
+                    adminRegNo: String, onUsersClick: () -> Unit,
+                    onTopContributorClick: () -> Unit
 ) {
     LaunchedEffect(Unit) {
         val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
@@ -55,6 +57,8 @@ fun AdminHomeScreen(
             adminViewModel.fetchAdminProfile(adminRegNo)
         }
         adminViewModel.fetchAdminStats()
+        adminViewModel.startNotificationListener()
+
     }
     val totalPosts = adminViewModel.totalPosts
     val lostPosts = adminViewModel.lostPosts
@@ -69,6 +73,7 @@ fun AdminHomeScreen(
     val mostCommon = adminViewModel.mostCommonCategory
     val skyBlue = Color(0xFFE3F2FD)
     Column(modifier = Modifier.fillMaxSize()) {
+
         Box(
             Modifier
                 .fillMaxWidth()
@@ -79,21 +84,65 @@ fun AdminHomeScreen(
                 )
                 .padding(vertical = 18.dp)
         ) {
-            Column {
-                Text(
-                    "Hello, ${adminViewModel.adminName.value.ifEmpty { "Admin" }} 👋",
-                    color = Color.White,
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    "Welcome back to your dashboard",
-                    color = Color.White.copy(alpha = 0.9f),
-                    fontSize = 14.sp
-                )
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+
+                // LEFT SIDE TEXT
+                Column {
+                    Text(
+                        "Hello, ${adminViewModel.adminName.value.ifEmpty { "Admin" }} 👋",
+                        color = Color.White,
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        "Welcome back to your dashboard",
+                        color = Color.White.copy(alpha = 0.9f),
+                        fontSize = 14.sp
+                    )
+                }
+
+                // RIGHT SIDE NOTIFICATION ICON
+                val unread = adminViewModel.unreadCount
+                IconButton(onClick = { navController.navigate("admin_notifications") }) {
+                    Box {
+                        Icon(
+                            imageVector = Icons.Default.Notifications,
+                            contentDescription = "Notifications",
+                            tint = Color.White,
+                            modifier = Modifier.size(28.dp)
+                        )
+
+                        if (unread > 0) {
+                            Box(
+                                modifier = Modifier
+                                    .size(18.dp)
+                                    .align(Alignment.TopEnd)
+                                    .offset(x = 4.dp, y = (-4).dp)
+                                    .background(Color.Red, RoundedCornerShape(50)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    unread.coerceAtMost(99).toString(),
+                                    color = Color.White,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
+
         Spacer(Modifier.height(16.dp))
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -255,7 +304,7 @@ fun AdminHomeScreen(
                 LostFoundPieChart(
                     lostCount,
                     foundCount,
-                    modifier = Modifier.weight(1f).clickable{showPieDialog = true}
+                    modifier = Modifier.weight(1f).clickable { showPieDialog = true }
                 )
                 Spacer(Modifier.width(8.dp))
                 if (showPieDialog) {
@@ -265,14 +314,20 @@ fun AdminHomeScreen(
                         text = {
                             Column {
                                 Text("Lost vs Found & Claims")
-                                PieChartLarge( lostCount = adminViewModel.lostCount,
+                                PieChartLarge(
+                                    lostCount = adminViewModel.lostCount,
                                     foundCount = adminViewModel.foundCount,
                                     resolvedCount = adminViewModel.resolvedCases,
-                                    pendingCount = adminViewModel.pendingClaims)
+                                    pendingCount = adminViewModel.pendingClaims
+                                )
 
                             }
                         },
-                        confirmButton = { Button(onClick = { showPieDialog = false }) { Text("Close") } }
+                        confirmButton = {
+                            Button(onClick = {
+                                showPieDialog = false
+                            }) { Text("Close") }
+                        }
                     )
                 }
                 Card(
@@ -303,7 +358,8 @@ fun AdminHomeScreen(
             )
         }
     }
-}
+    }
+
 
 
 
