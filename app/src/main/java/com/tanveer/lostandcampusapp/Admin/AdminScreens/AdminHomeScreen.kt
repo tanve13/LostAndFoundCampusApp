@@ -71,7 +71,6 @@ fun AdminHomeScreen(navController: NavController,
     val newUsers = adminViewModel.newUsersThisWeek
     val mostActive = adminViewModel.mostActiveUser
     val mostCommon = adminViewModel.mostCommonCategory
-    val skyBlue = Color(0xFFE3F2FD)
     Column(modifier = Modifier.fillMaxSize()) {
 
         Box(

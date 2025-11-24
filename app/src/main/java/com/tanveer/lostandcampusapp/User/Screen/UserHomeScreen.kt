@@ -39,6 +39,7 @@ fun HomeScreen(viewModel: UserViewModel, navController: NavController) {
     var selectedFilter by remember { mutableStateOf("All") }
     val posts by viewModel.allPosts
     val context = LocalContext.current
+    val username = viewModel.name.value
 
     LaunchedEffect(Unit) { viewModel.loadAllPosts() }
 
@@ -73,7 +74,7 @@ fun HomeScreen(viewModel: UserViewModel, navController: NavController) {
         ) {
             Column {
                 Text(
-                    text = "Hello, User 👋",
+                    text = "Hello,${username} 👋",
                     color = Color.White,
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold
@@ -217,36 +218,48 @@ fun PostCard(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(
-                    post.title,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        post.title,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    StatusBadge(status = post.status.ifEmpty { "PENDING" })
+                }
+
                 Text(post.category, color = Color.Gray, fontSize = 12.sp)
                 Text("📍 ${post.location}", color = Color.Gray, fontSize = 12.sp)
                 Text("🕒 ${formatTimestamp(post.timestamp)}", color = Color.Gray, fontSize = 11.sp)
 
                 Spacer(modifier = Modifier.height(6.dp))
 
-                val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
-                if (post.userId != currentUserId) {
-                    Row(
-                        horizontalArrangement = Arrangement.End,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Button(
-                            onClick = { showClaimDialog = true },
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
-                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
-                            modifier = Modifier.height(34.dp)
-                        ) {
-                            Text("Claim", fontSize = 12.sp, color = Color.White)
-                        }
-                    }
-                }
+             //   val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+//                if (post.userId != currentUserId) {
+//                    Row(
+//                        horizontalArrangement = Arrangement.End,
+//                        modifier = Modifier.fillMaxWidth()
+//                    ) {
+//                        Button(
+//                            onClick = { showClaimDialog = true },
+//                            shape = RoundedCornerShape(12.dp),
+//                            colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+//                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
+//                            modifier = Modifier.height(34.dp)
+//                        ) {
+//                            Text("Claim", fontSize = 12.sp, color = Color.White)
+//                        }
+//                    }
+//                }
             }
         }
     }
@@ -258,6 +271,36 @@ fun PostCard(
             onDismiss = { showClaimDialog = false },
             viewModel = viewModel,
             context = context
+        )
+    }
+}
+
+@Composable
+fun StatusBadge(status: String) {
+    val bgColor = when (status.uppercase()) {
+        "PENDING" -> Color(0xFFFFF3CD)  // Light Yellow
+        "RESOLVED" -> Color(0xFFD4EDDA) // Light Green
+        "REJECTED" -> Color(0xFFF8D7DA) // Light Red
+        else -> Color.LightGray
+    }
+
+    val textColor = when (status.uppercase()) {
+        "PENDING" -> Color(0xFF856404)
+        "RESOLVED" -> Color(0xFF155724)
+        "REJECTED" -> Color(0xFF721C24)
+        else -> Color.DarkGray
+    }
+
+    Box(
+        modifier = Modifier
+            .background(bgColor, shape = RoundedCornerShape(16.dp))
+            .padding(horizontal = 10.dp, vertical = 4.dp)
+    ) {
+        Text(
+            text = status,
+            color = textColor,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold
         )
     }
 }

@@ -23,7 +23,6 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
 import com.google.firebase.auth.FirebaseAuth
 import com.tanveer.lostandcampusapp.User.Screen.ChatScreen
-import com.tanveer.lostandcampusapp.User.Screen.ClaimScreen
 import com.tanveer.lostandcampusapp.User.Screen.HomeScreen
 import com.tanveer.lostandcampusapp.User.Screen.ItemsDetailsScreen
 import com.tanveer.lostandcampusapp.User.Screen.NotificationScreen
@@ -81,13 +80,13 @@ fun BottomNavigation(
             val posts = userViewModel.allPosts.value
             val post = posts.find { it.id == postId }
 
-            post?.let {
-               ClaimScreen(
-                    post = it,
-                    viewModel = userViewModel,
-                    navController = navController
-                )
-            }
+//            post?.let {
+//               ClaimScreen(
+//                    post = it,
+//                    viewModel = userViewModel,
+//                    navController = navController
+//                )
+//            }
         }
         composable(
             route = "chat/{chatId}/{postOwnerName}",

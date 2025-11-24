@@ -17,6 +17,7 @@ import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.firestore
 import com.tanveer.lostandcampusapp.Admin.Repository.AdminUserRepository
 import com.tanveer.lostandcampusapp.Admin.Repository.ClaimRepository
+import com.tanveer.lostandcampusapp.User.Screen.formatTimestamp
 import com.tanveer.lostandcampusapp.data.FileUtils
 import com.tanveer.lostandcampusapp.model.AdminNotificationDataClass
 import com.tanveer.lostandcampusapp.model.ClaimRequest
@@ -39,21 +40,20 @@ class AdminViewModel @Inject constructor(
     var adminName = mutableStateOf("")
     var adminEmail = mutableStateOf("")
     var adminRole = mutableStateOf("")
-    var profileUrl by mutableStateOf<String?>(null)
     var deletedPosts by mutableStateOf(0)
-
-    // New mutable state for all users
     var allUsers by mutableStateOf<List<ProfileDataClass>>(emptyList())
         private set
-    // notification state
-    private val _notifications: SnapshotStateList<AdminNotificationDataClass> = mutableStateListOf()
+// Notification list
+    private val _notifications = mutableStateListOf<AdminNotificationDataClass>()
     val notifications: List<AdminNotificationDataClass> get() = _notifications
-    val unreadCount: Int get() = _notifications.count { !it.read }
+    private val notificationIds = mutableSetOf<String>()    // to avoid duplicates / detect updates
+    var notificationTab by mutableStateOf("ALL")
+    var unreadCount by mutableStateOf(0)
 
-    // internal caches to detect changes
-    private val seenPostIds = mutableSetOf<String>()
-    private val postClaimMap = mutableMapOf<String, String?>()
-    // State for dashboard
+
+//
+//    private val seenPostIds = mutableSetOf<String>()
+//    private val postClaimMap = mutableMapOf<String, String?>()
     var totalPosts by mutableStateOf(0)
     var lostPosts by mutableStateOf(0)
     var foundPosts by mutableStateOf(0)
@@ -68,9 +68,6 @@ class AdminViewModel @Inject constructor(
     var weeklyPosts by mutableStateOf(listOf(0, 0, 0, 0, 0, 0, 0))
     var weekLabels by mutableStateOf(listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"))
     var monthlyPosts by mutableStateOf<List<Int>>(listOf())
-    var monthLabels by mutableStateOf(
-        listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
-    )
     var yearlyPosts by mutableStateOf<List<Int>>(emptyList())
     var yearLabels by mutableStateOf<List<String>>(emptyList())
 
@@ -96,122 +93,260 @@ class AdminViewModel @Inject constructor(
             field = value
             filterClaims()
         }
-    // call this once (e.g., from AdminHomeScreen LaunchedEffect)
     fun startNotificationListener() {
-        // listen for posts added / changed
-        firestore.collection("posts")
+        // call both listeners. They will merge results into _notifications
+        listenPostNotifications()
+        listenClaimNotifications()
+    }
+
+    private fun listenPostNotifications() {
+        val db = FirebaseFirestore.getInstance()
+        db.collection("notifications")   // your posts notifications collection
+            .orderBy("timestamp", Query.Direction.DESCENDING)
             .addSnapshotListener { snapshot, error ->
-                if (error != null || snapshot == null) return@addSnapshotListener
+                if (error != null) return@addSnapshotListener
 
-                for (dc in snapshot.documentChanges) {
-                    val doc = dc.document
-                    val id = doc.id
-                    val post = doc.toObject(Post::class.java)
+                if (snapshot == null) return@addSnapshotListener
 
-                    when (dc.type) {
-                        DocumentChange.Type.ADDED -> {
-                            if (!seenPostIds.contains(id)) {
-                                // new post -> add notification
-                                val notif = AdminNotificationDataClass(
-                                    id = "post_$id",
-                                    type = "NEW_POST",
-                                    title = "New Post: ${post.title.ifEmpty { "Item" }}",
-                                    subtitle = "By ${post.userName ?: "Someone"} • ${post.category}",
-                                    timestamp = post.timestamp,
-                                    read = false,
-                                    refId = id
-                                )
-                                _notifications.add(0, notif) // newest first
-                                seenPostIds.add(id)
-                                postClaimMap[id] = post.claimedBy
-                            }
-                        }
+                // process each doc (add/update/remove)
+                for (docChange in snapshot.documentChanges) {
+                    val doc = docChange.document
+                    val rawId = doc.id
+                    val id = "post_$rawId" // prefix so ids don't collide with claim docs
 
-                        DocumentChange.Type.MODIFIED -> {
-                            // detect claim changes: claimedBy changed from null -> non-null
-                            val prevClaim = postClaimMap[id]
-                            val currentClaim = post.claimedBy
-                            if (prevClaim.isNullOrEmpty() && !currentClaim.isNullOrEmpty()) {
-                                // someone claimed the post -> add notification
-                                val notif = AdminNotificationDataClass(
-                                    id = "claim_$id",
-                                    type = "CLAIMED",
-                                    title = "Claimed: ${post.title.ifEmpty { "Item" }}",
-                                    subtitle = "Claimed by ${currentClaim}",
-                                    timestamp = System.currentTimeMillis(),
-                                    read = false,
-                                    refId = id
-                                )
+                    when (docChange.type) {
+                        DocumentChange.Type.ADDED, DocumentChange.Type.MODIFIED -> {
+                            // Compose AdminNotificationDataClass
+                            val ts = doc.getLong("timestamp") ?: System.currentTimeMillis()
+                            val notif = AdminNotificationDataClass(
+                                id = id,
+                                type = doc.getString("type") ?: "NEW_POST",
+                                title = doc.getString("title") ?: "New Post",
+                                subtitle = doc.getString("subtitle") ?: (doc.getString("message") ?: ""),
+                                timestamp = ts,
+                                read = doc.getBoolean("read") ?: false,
+                                refId = doc.getString("postId") ?: doc.getString("refId") ?: "",
+                                message = doc.getString("message") ?: "",
+                                time = formatTimestamp(ts)
+                            )
+                            // add or update
+                            val existingIndex = _notifications.indexOfFirst { it.id == id }
+                            if (existingIndex >= 0) {
+                                _notifications[existingIndex] = notif
+                            } else if (notificationIds.add(id)) {
                                 _notifications.add(0, notif)
                             }
-                            // update cache
-                            postClaimMap[id] = currentClaim
-                            seenPostIds.add(id)
                         }
 
                         DocumentChange.Type.REMOVED -> {
-                            // optional: remove related notifications
-                            _notifications.removeAll { it.refId == id }
-                            seenPostIds.remove(id)
-                            postClaimMap.remove(id)
+                            _notifications.removeAll { it.id == id }
+                            notificationIds.remove(id)
                         }
                     }
                 }
+
+                // sort by timestamp desc
+                _notifications.sortByDescending { it.timestamp }
+                unreadCount = _notifications.count { !it.read }
             }
     }
-    var adminNotifications = mutableStateListOf<AdminNotificationDataClass>()
 
-    fun fetchAdminNotifications() {
-        isLoading = true
-
-        Firebase.firestore.collection("admin_notifications")
+    private fun listenClaimNotifications() {
+        val db = FirebaseFirestore.getInstance()
+        db.collection("admin_notifications")   // your claim notifications collection
             .orderBy("timestamp", Query.Direction.DESCENDING)
-            .get()
-            .addOnSuccessListener { snap ->
-                adminNotifications.clear()
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) return@addSnapshotListener
+                if (snapshot == null) return@addSnapshotListener
 
-                for (doc in snap.documents) {
-                    val data = AdminNotificationDataClass(
-                        id = doc.id,
-                        type = doc.getString("type") ?: "",
-                        title = doc.getString("title") ?: "",
-                        subtitle = doc.getString("subtitle") ?: "",
-                        timestamp = doc.getLong("timestamp") ?: 0L,
-                        read = doc.getBoolean("read") ?: false,
-                        refId = doc.getString("refId") ?: "",
-                        message = doc.getString("message") ?: "",
-                        time = doc.getString("time") ?: ""
-                    )
+                for (docChange in snapshot.documentChanges) {
+                    val doc = docChange.document
+                    val rawId = doc.id
+                    val id = "claim_$rawId"
 
-                    adminNotifications.add(data)
+                    when (docChange.type) {
+                        DocumentChange.Type.ADDED, DocumentChange.Type.MODIFIED -> {
+                            val ts = doc.getLong("timestamp") ?: System.currentTimeMillis()
+                            val notif = AdminNotificationDataClass(
+                                id = id,
+                                type = doc.getString("type") ?: "CLAIM_REQUEST",
+                                title = doc.getString("title") ?: "New Claim Request",
+                                subtitle = doc.getString("subtitle") ?: (doc.getString("claimedBy") ?: ""),
+                                timestamp = ts,
+                                read = doc.getBoolean("read") ?: false,
+                                refId = doc.getString("postId") ?: doc.getString("refId") ?: "",
+                                message = doc.getString("message") ?: "",
+                                time = formatTimestamp(ts)
+                            )
+                            val existingIndex = _notifications.indexOfFirst { it.id == id }
+                            if (existingIndex >= 0) {
+                                _notifications[existingIndex] = notif
+                            } else if (notificationIds.add(id)) {
+                                _notifications.add(0, notif)
+                            }
+                        }
+
+                        DocumentChange.Type.REMOVED -> {
+                            _notifications.removeAll { it.id == id }
+                            notificationIds.remove(id)
+                        }
+                    }
                 }
 
-                isLoading = false
-            }
-            .addOnFailureListener {
-                isLoading = false
+                _notifications.sortByDescending { it.timestamp }
+                unreadCount = _notifications.count { !it.read }
             }
     }
-
 
     fun markAllNotificationsRead() {
         _notifications.forEach { it.read = true }
+        unreadCount = 0
     }
 
-    fun markNotificationRead(notificationId: String) {
-        _notifications.find { it.id == notificationId }?.read = true
-    }
+    fun markNotificationRead(localId: String) {
+        // update local list
+        val idx = _notifications.indexOfFirst { it.id == localId }
+        if (idx >= 0) {
+            val updated = _notifications[idx].copy(read = true)
+            _notifications[idx] = updated
+        }
+        unreadCount = _notifications.count { !it.read }
 
-    // Load all claims
-    fun fetchClaimRequests() {
-        _isClaimLoading.value = true
-        viewModelScope.launch {
-            val claims = repository.getAllClaimRequests()
-            _claimRequests.value = claims
-            filterClaims()
-            _isClaimLoading.value = false
+        // update Firestore — determine which collection by prefix
+        val (prefix, rawId) = if (localId.startsWith("post_")) "post" to localId.removePrefix("post_")
+        else if (localId.startsWith("claim_")) "claim" to localId.removePrefix("claim_")
+        else null to localId
+
+        when (prefix) {
+            "post" -> FirebaseFirestore.getInstance().collection("notifications")
+                .document(rawId)
+                .update("read", true)
+            "claim" -> FirebaseFirestore.getInstance().collection("admin_notifications")
+                .document(rawId)
+                .update("read", true)
+            else -> {
+                // fallback: try admin_notifications or ignore
+                FirebaseFirestore.getInstance().collection("admin_notifications")
+                    .document(rawId)
+                    .update("read", true)
+            }
         }
     }
+
+//    val filteredNotifications: List<AdminNotificationDataClass>
+//        get() = when (notificationTab) {
+//            "UNREAD" -> _notifications.filter { !it.read }
+//            else -> _notifications
+//        }
+//    fun approveClaim(
+//        claimId: String,
+//        postId: String,
+//        onSuccess: () -> Unit,
+//        onFailure: () -> Unit
+//    ) {
+//        val db = FirebaseFirestore.getInstance()
+//
+//        db.collection("claimRequests")
+//            .document(claimId)
+//            .get()
+//            .addOnSuccessListener { requestDoc ->
+//
+//                val claimerId = requestDoc.getString("claimerId") ?: ""
+//                if (claimerId.isEmpty()) return@addOnSuccessListener
+//
+//                db.collection("users")
+//                    .document(claimerId)
+//                    .get()
+//                    .addOnSuccessListener { userDoc ->
+//
+//                        val claimerName = userDoc.getString("name") ?: "Unknown"
+//
+//                        // Update post
+//                        db.collection("posts")
+//                            .document(postId)
+//                            .update(
+//                                mapOf(
+//                                    "claimedBy" to claimerId,
+//                                    "claimedByName" to claimerName,
+//                                    "status" to "CLAIMED"
+//                                )
+//                            ).addOnSuccessListener {
+//
+//                                // Update claim request status
+//                                db.collection("claimRequests")
+//                                    .document(claimId)
+//                                    .update("status", "APPROVED")
+//                                    .addOnSuccessListener { onSuccess() }
+//                                    .addOnFailureListener { onFailure() }
+//                            }
+//                    }
+//            }
+//            .addOnFailureListener { onFailure() }
+//    }
+fun approveClaim(claimId: String, postId: String, onSuccess: () -> Unit, onFailure: () -> Unit) {
+    firestore.collection("claims").document(claimId)
+        .update("status", "APPROVED")
+        .addOnSuccessListener { onSuccess() }
+        .addOnFailureListener { onFailure() }
+}
+    fun rejectClaim(claimId: String, onSuccess: () -> Unit, onFailure: () -> Unit) {
+        firestore.collection("claims").document(claimId)
+            .update("status", "REJECTED")
+            .addOnSuccessListener { onSuccess() }
+            .addOnFailureListener { onFailure() }
+    }
+//esko dekhna hai ik bar dobara
+//    fun fetchClaimRequests() {
+//        _isClaimLoading.value = true
+//
+////        val query = firestore.collection("claims")
+//        var query = firestore.collection("admin_notifications")
+//
+//        when (claimFilter) {
+//            "PENDING" -> query.whereEqualTo("status", "PENDING")
+//            "APPROVED" -> query.whereEqualTo("status", "APPROVED")
+//            "REJECTED" -> query.whereEqualTo("status", "REJECTED")
+//            else -> query
+//        }
+//            .orderBy("claimTimestamp", Query.Direction.DESCENDING)
+//            .get()
+//            .addOnSuccessListener { snapshot ->
+//                val list = snapshot.documents.mapNotNull { it.toObject(ClaimRequest::class.java) }
+//                _claimRequests.value = list
+//                _isClaimLoading.value = false
+//            }
+//            .addOnFailureListener {
+//                _isClaimLoading.value = false
+//            }
+//    }
+fun fetchClaimRequests() {
+    _isClaimLoading.value = true
+
+    var query = firestore.collection("admin_notifications")
+
+    when (claimFilter) {
+        "PENDING" -> query.whereEqualTo("status", "PENDING")
+        "APPROVED" -> query.whereEqualTo("status", "APPROVED")
+        "REJECTED" -> query.whereEqualTo("status", "REJECTED")
+        else -> query
+    }
+
+    query.get()
+        .addOnSuccessListener { result ->
+            val list = result.documents.mapNotNull { it.toObject(ClaimRequest::class.java) }
+            _claimRequests.value = list
+            _isClaimLoading.value = false
+        }
+        .addOnFailureListener {
+            _isClaimLoading.value = false
+        }
+}
+
+    fun refreshClaimRequests() {
+        fetchClaimRequests()
+    }
+
+
     // FUNCTION TO LOAD USERS
     fun fetchAllUsers() {
         isLoading = true
@@ -241,8 +376,6 @@ class AdminViewModel @Inject constructor(
             }
     }
 
-    fun refreshClaimRequests() = fetchClaimRequests()
-
     // Claims filtering logic
     private fun filterClaims() {
         val allClaims = _claimRequests.value
@@ -254,31 +387,18 @@ class AdminViewModel @Inject constructor(
         }
     }
 
-    // Approve claim
-    fun approveClaim(claimId: String, onSuccess: () -> Unit, onFailure: () -> Unit) {
-        viewModelScope.launch {
-            try {
-                repository.updateClaimStatus(claimId, "APPROVED")
-                fetchClaimRequests()
-                onSuccess()
-            } catch (e: Exception) {
-                onFailure()
-            }
-        }
-    }
-
-    // Reject claim
-    fun rejectClaim(claimId: String, onSuccess: () -> Unit, onFailure: () -> Unit) {
-        viewModelScope.launch {
-            try {
-                repository.updateClaimStatus(claimId, "REJECTED")
-                fetchClaimRequests()
-                onSuccess()
-            } catch (e: Exception) {
-                onFailure()
-            }
-        }
-    }
+//    // Reject claim
+//    fun rejectClaim(claimId: String, onSuccess: () -> Unit, onFailure: () -> Unit) {
+//        viewModelScope.launch {
+//            try {
+//                repository.updateClaimStatus(claimId, "REJECTED")
+//                fetchClaimRequests()
+//                onSuccess()
+//            } catch (e: Exception) {
+//                onFailure()
+//            }
+//        }
+//    }
 
     //loading ke leia
     var isLoading by mutableStateOf(false)

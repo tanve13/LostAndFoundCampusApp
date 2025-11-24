@@ -56,6 +56,7 @@ fun AdminClaimsScreen(adminViewModel: AdminViewModel = hiltViewModel()) {
     val filters = listOf("All", "Pending", "Approved", "Rejected")
 
     LaunchedEffect(Unit) {
+        adminViewModel.claimFilter = "ALL"
         adminViewModel.fetchClaimRequests()
     }
 
@@ -77,7 +78,9 @@ fun AdminClaimsScreen(adminViewModel: AdminViewModel = hiltViewModel()) {
                     val chipBg = if (isSelected) Color.Black else Color.White
                     val chipText = if (isSelected) Color.White else Color.Black
                     Button(
-                        onClick = { adminViewModel.claimFilter = filter.uppercase() },
+                        onClick = {
+                            adminViewModel.claimFilter = filter.uppercase()
+                            adminViewModel.fetchClaimRequests()   },
                         shape = RoundedCornerShape(22.dp),
                         colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = chipBg),
                         contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 18.dp, vertical = 6.dp),
@@ -136,6 +139,7 @@ fun AdminClaimsScreen(adminViewModel: AdminViewModel = hiltViewModel()) {
                     if (actionType == "APPROVE") {
                         adminViewModel.approveClaim(
                             claimId = claimToActOn!!.id,
+                            postId = claimToActOn!!.postId,
                             onSuccess = {
                                 setShowConfirmDialog(false)
                                 adminViewModel.fetchClaimRequests()

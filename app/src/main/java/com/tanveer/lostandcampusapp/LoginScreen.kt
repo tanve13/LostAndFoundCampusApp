@@ -12,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -36,6 +37,7 @@ fun LoginScreen(
     var isPasswordVisible by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val auth = FirebaseAuth.getInstance()
+    var isLoading by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         val (savedName, savedReg) = DataStoreManager.getUserData(context)
@@ -116,11 +118,13 @@ fun LoginScreen(
                     }
 
                     else -> {
+                        isLoading = true
                         AuthRepo.loginWithRegNoPassword(
                             regNo = regNo,
                             password = password,
                             context = context,
                             onSuccess = { name, regNo,role ->
+                                isLoading = false
                                 onLoginSuccess(role)
                                 Toast.makeText(context, "Login Successful!", Toast.LENGTH_SHORT).show()
                                 userViewModel.setUserData(name, regNo)
@@ -131,19 +135,27 @@ fun LoginScreen(
 
                             },
                             onError = { msg ->
+                                isLoading = false
                                 Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
                             }
                         )
 
                     }
                 }
-            },
+            },enabled = !isLoading,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 24.dp)
         ) {
-            Text("Login")
-        }
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(22.dp),
+                    color = Color.White,
+                    strokeWidth = 2.dp
+                )
+            } else {
+                Text("Login")
+            }        }
         Spacer(modifier = Modifier.height(16.dp))
 
         TextButton(

@@ -16,6 +16,7 @@ import com.tanveer.lostandcampusapp.data.FileUtils
 import com.tanveer.lostandcampusapp.data.PostRepo
 import com.tanveer.lostandcampusapp.data.StatsRepository
 import com.tanveer.lostandcampusapp.data.UserStats
+import com.tanveer.lostandcampusapp.model.ClaimRequest
 import com.tanveer.lostandcampusapp.model.NotificationDataClass
 import com.tanveer.lostandcampusapp.model.Post
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -60,6 +61,9 @@ class UserViewModel(application: Application): AndroidViewModel(application) {
     //notifications
     val _notifications = MutableStateFlow<List<NotificationDataClass>>(emptyList())
     val notifications: StateFlow<List<NotificationDataClass>> = _notifications
+   //claims
+   private val _claims = mutableStateOf<List<ClaimRequest>>(emptyList())
+    val claims = _claims
 
     fun setUserData(userName: String, userReg: String,userBio: String = "") {
         name.value = userName
@@ -256,31 +260,68 @@ class UserViewModel(application: Application): AndroidViewModel(application) {
             loadAllPosts()
         }
     }
-   //je item claim krne ke liea....
-    fun claimPost(
-        postId: String,
-        claimerId: String,
-        postOwnerId: String,
-        onSuccess: (String) -> Unit,
+    fun submitClaimRequest(
+        post: Post,
+        onSuccess: () -> Unit,
         onError: (String) -> Unit
     ) {
-        viewModelScope.launch {
-            try {
-                val db = FirebaseFirestore.getInstance()
-                db.collection("posts")
-                    .document(postId)
-                    .update("claimedBy", claimerId)
+        val auth = FirebaseAuth.getInstance()
+        val user = auth.currentUser ?: return onError("User not logged in")
+
+        val requestId = UUID.randomUUID().toString()
+        val db = FirebaseFirestore.getInstance()
+
+        val claimRequest = mapOf(
+            "id" to requestId,
+            "claimerId" to user.uid,
+            "ownerId" to post.userId,
+            "postId" to post.id,
+
+            "itemTitle" to post.title,
+            "itemImageUrl" to post.imageUrl,
+            "description" to post.description,
+
+            "userName" to (user.displayName ?: "Unknown"),
+            "userEmail" to (user.email ?: ""),
+
+            "claimTimestamp" to System.currentTimeMillis(),
+            "status" to "PENDING"
+        )
+
+        // 1️⃣ Save claim request
+        db.collection("claimRequests")
+            .document(requestId)
+            .set(claimRequest)
+            .addOnSuccessListener {
+
+                // 2️⃣ Send notification to admin
+                val adminNotif = mapOf(
+                    "id" to db.collection("admin_notifications").document().id,
+                    "type" to "CLAIM_REQUEST",
+                    "title" to "New Claim Request",
+                    "subtitle" to "A user requested claim",
+                    "message" to "${user.displayName ?: "User"} claimed item: ${post.title}",
+                    "timestamp" to System.currentTimeMillis(),
+                    "read" to false,
+                    "refId" to post.id,
+                    "claimerId" to user.uid
+                )
+
+                db.collection("admin_notifications")
+                    .add(adminNotif)
                     .addOnSuccessListener {
-                        val chatId = listOf(claimerId, postOwnerId).sorted().joinToString("_")
-                        onSuccess(chatId)
+                        onSuccess() // Claim + notification done
                     }
-                    .addOnFailureListener { e -> onError(e.message ?: "Error claiming post") }
-            } catch (e: Exception) {
-                onError(e.message ?: "Unknown error")
+                    .addOnFailureListener {
+                        onError("Claim saved but notification failed: ${it.message}")
+                    }
             }
-        }
+            .addOnFailureListener { onError(it.message ?: "Error submitting claim") }
     }
-   ////to send notification ....
+
+
+
+    ////to send notification ....
     fun sendPostNotification(postType: String, title: String, message: String) {
        val emoji = when(postType.lowercase()) {
            "lost" -> "\uD83D\uDEA8"  // ❓ (Question Mark)

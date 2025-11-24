@@ -22,6 +22,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.tanveer.lostandcampusapp.data.AuthRepo
 import com.tanveer.lostandcampusapp.viewModel.UserViewModel
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.graphics.Color
 import com.tanveer.lostandcampusapp.data.DataStoreManager
 import kotlinx.coroutines.launch
 
@@ -41,6 +42,7 @@ fun SignUpScreen(
     val context = LocalContext.current
     val auth = FirebaseAuth.getInstance()
     val coroutineScope = rememberCoroutineScope()
+    var isLoading by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -121,6 +123,7 @@ fun SignUpScreen(
                         Toast.makeText(context, "Password must be at least 6 characters", Toast.LENGTH_SHORT).show()
                     }
                     else -> {
+                        isLoading = true
                         AuthRepo.signUpWithEmailPassword(
                             name = name,
                             email = email,
@@ -128,21 +131,31 @@ fun SignUpScreen(
                             password = password,
                             context = context,
                             onSuccess = { savedName, savedReg ->
+                                isLoading = false
                                 userViewModel.setUserData(savedName, savedReg)
                                 Toast.makeText(context, "Account created Successfully!", Toast.LENGTH_SHORT).show()
                                 onSignUpClick(name,email, regNo, password)
                                         },
                             onError = { msg ->
+                                isLoading = false
                                 Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
                             }
                         )
 
                     }
                 }
-            },
+            },enabled = !isLoading,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Sign Up")
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(22.dp),
+                    color = Color.White,
+                    strokeWidth = 2.dp
+                )
+            } else {
+                Text("Login")
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))

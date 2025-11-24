@@ -185,17 +185,13 @@ fun ItemsDetailsScreen(
                         // For found items you might want a 'Mark as returned' or 'Contact owner' action
                         OutlinedButton(
                             onClick = {
-                                // optional: direct claim request via viewModel
-                                val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
-                                viewModel.claimPost(
-                                    postId = post.id,
-                                    claimerId = currentUserId,
-                                    postOwnerId = post.userId,
+                                viewModel.submitClaimRequest(
+                                    post = post,
                                     onSuccess = {
-                                        Toast.makeText(context, "Claim submitted", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, "Claim request sent to admin", Toast.LENGTH_SHORT).show()
                                     },
-                                    onError = { msg ->
-                                        Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                                    onError = {
+                                        Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
                                     }
                                 )
                             },
@@ -203,6 +199,7 @@ fun ItemsDetailsScreen(
                         ) {
                             Text("Claim")
                         }
+
                     }
                 }
 
