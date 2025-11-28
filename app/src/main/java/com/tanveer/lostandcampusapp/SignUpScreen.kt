@@ -154,7 +154,7 @@ fun SignUpScreen(
                     strokeWidth = 2.dp
                 )
             } else {
-                Text("Login")
+                Text("SignUp")
             }
         }
 

@@ -113,6 +113,25 @@ object AuthRepo {
                 onDone(false, "Lookup failed: ${e.message}")
             }
     }
+    fun updateProfileUrl(
+        regNo: String,
+        url: String,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        if (regNo.isBlank()) {
+            onError("Invalid RegNo")
+            return
+        }
+
+        db.collection("users")
+            .document(regNo)
+            .update("profilePicUrl", url)
+            .addOnSuccessListener { onSuccess() }
+            .addOnFailureListener { e ->
+                onError("Failed: ${e.message}")
+            }
+    }
 
     fun logout(context: Context) {
         auth.signOut()

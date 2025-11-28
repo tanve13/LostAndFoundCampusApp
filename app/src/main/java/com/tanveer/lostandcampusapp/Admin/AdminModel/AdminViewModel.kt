@@ -2,6 +2,9 @@ package com.tanveer.lostandcampusapp.Admin.AdminModel
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
+import android.widget.Toast
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -18,16 +21,19 @@ import com.google.firebase.firestore.firestore
 import com.tanveer.lostandcampusapp.Admin.Repository.AdminUserRepository
 import com.tanveer.lostandcampusapp.Admin.Repository.ClaimRepository
 import com.tanveer.lostandcampusapp.User.Screen.formatTimestamp
+import com.tanveer.lostandcampusapp.data.AuthRepo
 import com.tanveer.lostandcampusapp.data.FileUtils
 import com.tanveer.lostandcampusapp.model.AdminNotificationDataClass
 import com.tanveer.lostandcampusapp.model.ClaimRequest
 import com.tanveer.lostandcampusapp.model.Post
 import com.tanveer.lostandcampusapp.model.ProfileDataClass
+import dagger.hilt.android.internal.Contexts.getApplication
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
 
@@ -43,7 +49,8 @@ class AdminViewModel @Inject constructor(
     var deletedPosts by mutableStateOf(0)
     var allUsers by mutableStateOf<List<ProfileDataClass>>(emptyList())
         private set
-// Notification list
+
+    // Notification list
     private val _notifications = mutableStateListOf<AdminNotificationDataClass>()
     val notifications: List<AdminNotificationDataClass> get() = _notifications
     private val notificationIds = mutableSetOf<String>()    // to avoid duplicates / detect updates
@@ -51,7 +58,7 @@ class AdminViewModel @Inject constructor(
     var unreadCount by mutableStateOf(0)
 
 
-//
+    //
 //    private val seenPostIds = mutableSetOf<String>()
 //    private val postClaimMap = mutableMapOf<String, String?>()
     var totalPosts by mutableStateOf(0)
@@ -79,8 +86,8 @@ class AdminViewModel @Inject constructor(
     val user = _user.asStateFlow()
     private val _isSaving = MutableStateFlow(false)
     val isSaving = _isSaving.asStateFlow()
-    private val _profileUpdated = MutableStateFlow(false)
-    val profileUpdated = _profileUpdated.asStateFlow()
+    private val _profileUpdated = mutableStateOf<String?>(null)
+    val profileUpdated: State<String?> = _profileUpdated
 
     //claimscreen ke leia
     private val _claimRequests = MutableStateFlow<List<ClaimRequest>>(emptyList())
@@ -93,11 +100,75 @@ class AdminViewModel @Inject constructor(
             field = value
             filterClaims()
         }
+
     fun startNotificationListener() {
         // call both listeners. They will merge results into _notifications
         listenPostNotifications()
         listenClaimNotifications()
     }
+
+    //    fun updateProfileImage(regNo: String, imageUrl: String) {
+//        AuthRepo.updateProfileUrl(
+//            regNo = regNo,
+//            url = imageUrl,
+//            onSuccess = {
+//                _profileUpdated.value = "SUCCESS"
+//            },
+//            onError = {
+//                _profileUpdated.value = "ERROR: $it"
+//            }
+//        )
+//    }
+    fun updateProfileImage(url: String, context: Context, onDone: () -> Unit) {
+        val sharedPref = context.getSharedPreferences("UserSession", Context.MODE_PRIVATE)
+        val regNo = sharedPref.getString("regNo", null) ?: return
+        val data = mapOf(
+            "profileImage" to url
+        )
+        FirebaseFirestore.getInstance()
+            .collection("users")
+            .document(regNo)
+            .update(data)
+            .addOnSuccessListener {
+                Log.d("PROFILE", "Image URL updated")
+                onDone()
+            }
+            .addOnFailureListener {
+                Log.e("PROFILE", "Error updating", it)
+            }
+    }
+    private val _profileImageUrl = MutableStateFlow<String?>(null)
+    val profileImageUrl = _profileImageUrl.asStateFlow()
+
+    fun loadUserProfile(context: Context) {
+        val sharedPref = context.getSharedPreferences("UserSession", Context.MODE_PRIVATE)
+        val regNo = sharedPref.getString("regNo", null) ?: return
+
+        FirebaseFirestore.getInstance()
+            .collection("users")
+            .document(regNo)
+            .get()
+            .addOnSuccessListener { doc ->
+                _profileImageUrl.value = doc.getString("profileImage")
+            }
+    }
+
+
+
+    fun uploadToCloudinary(
+        context: Context,
+        uri: Uri,
+        onUploaded: (String) -> Unit
+    ) {
+        val file = FileUtils.from(context, uri)
+
+        CloudinaryHelper.uploadImage(file) { success, url ->
+            if (success && url != null) {
+                onUploaded(url)
+            }
+        }
+    }
+
 
     private fun listenPostNotifications() {
         val db = FirebaseFirestore.getInstance()
@@ -122,7 +193,8 @@ class AdminViewModel @Inject constructor(
                                 id = id,
                                 type = doc.getString("type") ?: "NEW_POST",
                                 title = doc.getString("title") ?: "New Post",
-                                subtitle = doc.getString("subtitle") ?: (doc.getString("message") ?: ""),
+                                subtitle = doc.getString("subtitle") ?: (doc.getString("message")
+                                    ?: ""),
                                 timestamp = ts,
                                 read = doc.getBoolean("read") ?: false,
                                 refId = doc.getString("postId") ?: doc.getString("refId") ?: "",
@@ -171,7 +243,8 @@ class AdminViewModel @Inject constructor(
                                 id = id,
                                 type = doc.getString("type") ?: "CLAIM_REQUEST",
                                 title = doc.getString("title") ?: "New Claim Request",
-                                subtitle = doc.getString("subtitle") ?: (doc.getString("claimedBy") ?: ""),
+                                subtitle = doc.getString("subtitle") ?: (doc.getString("claimedBy")
+                                    ?: ""),
                                 timestamp = ts,
                                 read = doc.getBoolean("read") ?: false,
                                 refId = doc.getString("postId") ?: doc.getString("refId") ?: "",
@@ -221,9 +294,11 @@ class AdminViewModel @Inject constructor(
             "post" -> FirebaseFirestore.getInstance().collection("notifications")
                 .document(rawId)
                 .update("read", true)
+
             "claim" -> FirebaseFirestore.getInstance().collection("admin_notifications")
                 .document(rawId)
                 .update("read", true)
+
             else -> {
                 // fallback: try admin_notifications or ignore
                 FirebaseFirestore.getInstance().collection("admin_notifications")
@@ -233,7 +308,7 @@ class AdminViewModel @Inject constructor(
         }
     }
 
-//    val filteredNotifications: List<AdminNotificationDataClass>
+    //    val filteredNotifications: List<AdminNotificationDataClass>
 //        get() = when (notificationTab) {
 //            "UNREAD" -> _notifications.filter { !it.read }
 //            else -> _notifications
@@ -283,19 +358,26 @@ class AdminViewModel @Inject constructor(
 //            }
 //            .addOnFailureListener { onFailure() }
 //    }
-fun approveClaim(claimId: String, postId: String, onSuccess: () -> Unit, onFailure: () -> Unit) {
-    firestore.collection("claims").document(claimId)
-        .update("status", "APPROVED")
-        .addOnSuccessListener { onSuccess() }
-        .addOnFailureListener { onFailure() }
-}
+    fun approveClaim(
+        claimId: String,
+        postId: String,
+        onSuccess: () -> Unit,
+        onFailure: () -> Unit
+    ) {
+        firestore.collection("claims").document(claimId)
+            .update("status", "APPROVED")
+            .addOnSuccessListener { onSuccess() }
+            .addOnFailureListener { onFailure() }
+    }
+
     fun rejectClaim(claimId: String, onSuccess: () -> Unit, onFailure: () -> Unit) {
         firestore.collection("claims").document(claimId)
             .update("status", "REJECTED")
             .addOnSuccessListener { onSuccess() }
             .addOnFailureListener { onFailure() }
     }
-//esko dekhna hai ik bar dobara
+
+    //esko dekhna hai ik bar dobara
 //    fun fetchClaimRequests() {
 //        _isClaimLoading.value = true
 //
@@ -319,28 +401,28 @@ fun approveClaim(claimId: String, postId: String, onSuccess: () -> Unit, onFailu
 //                _isClaimLoading.value = false
 //            }
 //    }
-fun fetchClaimRequests() {
-    _isClaimLoading.value = true
+    fun fetchClaimRequests() {
+        _isClaimLoading.value = true
 
-    var query = firestore.collection("admin_notifications")
+        var query = firestore.collection("admin_notifications")
 
-    when (claimFilter) {
-        "PENDING" -> query.whereEqualTo("status", "PENDING")
-        "APPROVED" -> query.whereEqualTo("status", "APPROVED")
-        "REJECTED" -> query.whereEqualTo("status", "REJECTED")
-        else -> query
+        when (claimFilter) {
+            "PENDING" -> query.whereEqualTo("status", "PENDING")
+            "APPROVED" -> query.whereEqualTo("status", "APPROVED")
+            "REJECTED" -> query.whereEqualTo("status", "REJECTED")
+            else -> query
+        }
+
+        query.get()
+            .addOnSuccessListener { result ->
+                val list = result.documents.mapNotNull { it.toObject(ClaimRequest::class.java) }
+                _claimRequests.value = list
+                _isClaimLoading.value = false
+            }
+            .addOnFailureListener {
+                _isClaimLoading.value = false
+            }
     }
-
-    query.get()
-        .addOnSuccessListener { result ->
-            val list = result.documents.mapNotNull { it.toObject(ClaimRequest::class.java) }
-            _claimRequests.value = list
-            _isClaimLoading.value = false
-        }
-        .addOnFailureListener {
-            _isClaimLoading.value = false
-        }
-}
 
     fun refreshClaimRequests() {
         fetchClaimRequests()
@@ -360,6 +442,7 @@ fun fetchClaimRequests() {
                 isLoading = false
             }
     }
+
     fun getPostsByUserRegNo(regNo: String): List<Post> {
         return allPosts.filter { it.userRegNo == regNo }
     }
@@ -471,7 +554,7 @@ fun fetchClaimRequests() {
                 }
 
             monthlyPosts = (0..11).map { month -> monthlyGrouped[month]?.size ?: 0 }
-          // Yearly post distribution (last few years)
+            // Yearly post distribution (last few years)
             val yearlyGrouped = posts.groupBy {
                 val cal = java.util.Calendar.getInstance()
                 cal.timeInMillis = it.timestamp
@@ -514,45 +597,4 @@ fun fetchClaimRequests() {
         }
     }
 
-    fun updateProfile(context: Context, id: String, name: String, email: String, photoUri: Uri?) {
-        viewModelScope.launch {
-            _isSaving.value = true
-            _profileUpdated.value = false
-
-            try {
-                if (photoUri != null) {
-                    val file = FileUtils.from(context, photoUri)
-                    // Call Cloudinary upload (callback style)
-                    CloudinaryHelper.uploadImage(file) { success, url ->
-                        if (success && url != null) {
-                            // Image uploaded, update Firestore profile with photo url
-                            viewModelScope.launch {
-                                repo.updateAdminProfile(context, id, name, email, photoUri)
-                                _user.value = repo.getAdminProfile(id)
-                                _profileUpdated.value = true
-                                _isSaving.value = false
-                            }
-                        } else {
-                            // Upload failed, update without photo:
-                            viewModelScope.launch {
-                                repo.updateAdminProfile(context, id, name, email, null)
-                                _user.value = repo.getAdminProfile(id)
-                                _profileUpdated.value = true
-                                _isSaving.value = false
-                            }
-                        }
-                    }
-                } else {
-                    // No photo change, update text fields only
-                    repo.updateAdminProfile(context, id, name, email, null)
-                    _user.value = repo.getAdminProfile(id)
-                    _profileUpdated.value = true
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            } finally {
-                _isSaving.value = false
-            }
-        }
-    }
 }
