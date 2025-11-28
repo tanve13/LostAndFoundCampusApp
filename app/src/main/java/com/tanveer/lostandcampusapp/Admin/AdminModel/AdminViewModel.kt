@@ -107,18 +107,6 @@ class AdminViewModel @Inject constructor(
         listenClaimNotifications()
     }
 
-    //    fun updateProfileImage(regNo: String, imageUrl: String) {
-//        AuthRepo.updateProfileUrl(
-//            regNo = regNo,
-//            url = imageUrl,
-//            onSuccess = {
-//                _profileUpdated.value = "SUCCESS"
-//            },
-//            onError = {
-//                _profileUpdated.value = "ERROR: $it"
-//            }
-//        )
-//    }
     fun updateProfileImage(url: String, context: Context, onDone: () -> Unit) {
         val sharedPref = context.getSharedPreferences("UserSession", Context.MODE_PRIVATE)
         val regNo = sharedPref.getString("regNo", null) ?: return
@@ -137,6 +125,7 @@ class AdminViewModel @Inject constructor(
                 Log.e("PROFILE", "Error updating", it)
             }
     }
+
     private val _profileImageUrl = MutableStateFlow<String?>(null)
     val profileImageUrl = _profileImageUrl.asStateFlow()
 
@@ -152,7 +141,6 @@ class AdminViewModel @Inject constructor(
                 _profileImageUrl.value = doc.getString("profileImage")
             }
     }
-
 
 
     fun uploadToCloudinary(
@@ -308,56 +296,6 @@ class AdminViewModel @Inject constructor(
         }
     }
 
-    //    val filteredNotifications: List<AdminNotificationDataClass>
-//        get() = when (notificationTab) {
-//            "UNREAD" -> _notifications.filter { !it.read }
-//            else -> _notifications
-//        }
-//    fun approveClaim(
-//        claimId: String,
-//        postId: String,
-//        onSuccess: () -> Unit,
-//        onFailure: () -> Unit
-//    ) {
-//        val db = FirebaseFirestore.getInstance()
-//
-//        db.collection("claimRequests")
-//            .document(claimId)
-//            .get()
-//            .addOnSuccessListener { requestDoc ->
-//
-//                val claimerId = requestDoc.getString("claimerId") ?: ""
-//                if (claimerId.isEmpty()) return@addOnSuccessListener
-//
-//                db.collection("users")
-//                    .document(claimerId)
-//                    .get()
-//                    .addOnSuccessListener { userDoc ->
-//
-//                        val claimerName = userDoc.getString("name") ?: "Unknown"
-//
-//                        // Update post
-//                        db.collection("posts")
-//                            .document(postId)
-//                            .update(
-//                                mapOf(
-//                                    "claimedBy" to claimerId,
-//                                    "claimedByName" to claimerName,
-//                                    "status" to "CLAIMED"
-//                                )
-//                            ).addOnSuccessListener {
-//
-//                                // Update claim request status
-//                                db.collection("claimRequests")
-//                                    .document(claimId)
-//                                    .update("status", "APPROVED")
-//                                    .addOnSuccessListener { onSuccess() }
-//                                    .addOnFailureListener { onFailure() }
-//                            }
-//                    }
-//            }
-//            .addOnFailureListener { onFailure() }
-//    }
     fun approveClaim(
         claimId: String,
         postId: String,
@@ -469,19 +407,6 @@ class AdminViewModel @Inject constructor(
             else -> allClaims
         }
     }
-
-//    // Reject claim
-//    fun rejectClaim(claimId: String, onSuccess: () -> Unit, onFailure: () -> Unit) {
-//        viewModelScope.launch {
-//            try {
-//                repository.updateClaimStatus(claimId, "REJECTED")
-//                fetchClaimRequests()
-//                onSuccess()
-//            } catch (e: Exception) {
-//                onFailure()
-//            }
-//        }
-//    }
 
     //loading ke leia
     var isLoading by mutableStateOf(false)

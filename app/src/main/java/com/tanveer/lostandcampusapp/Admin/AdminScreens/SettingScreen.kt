@@ -7,6 +7,7 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,20 +19,20 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.Divider
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.ReportProblem
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -44,20 +45,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
-import com.tanveer.lostandcampusapp.data.FileUtils
 import com.tanveer.lostandcampusapp.Admin.AdminModel.AdminViewModel
 import com.tanveer.lostandcampusapp.data.AuthRepo
-import com.tanveer.lostandcampusapp.viewModel.UserViewModel
 
 @Composable
 fun SettingScreen(
@@ -67,33 +65,24 @@ fun SettingScreen(
     navController: NavHostController,
     onLogout: () -> Unit
 ) {
-    val user by adminViewModel.user.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    var showLogoutDialog by remember { mutableStateOf(false) }
     val sharedPref = context.getSharedPreferences("UserSession", Context.MODE_PRIVATE)
     val regNo = sharedPref.getString("regNo", null) ?: return
-    val docId = regNo
     val imageUrl by adminViewModel.profileImageUrl.collectAsState()
+    var showLogoutDialog by remember { mutableStateOf(false) }
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
-        if (uri != null) {
-
-            adminViewModel.uploadToCloudinary(
-                context = context,
-                uri = uri,
-                onUploaded = { url ->
-                    adminViewModel.updateProfileImage(url,context){
-                        Toast.makeText(context, "Profile updated successfully!", Toast.LENGTH_SHORT).show()
-                        adminViewModel.loadUserProfile(context)
-                    }
+        uri?.let {
+            adminViewModel.uploadToCloudinary(context, uri) { url ->
+                adminViewModel.updateProfileImage(url, context) {
+                    adminViewModel.loadUserProfile(context)
+                    Toast.makeText(context, "Profile Updated!", Toast.LENGTH_SHORT).show()
                 }
-            )
+            }
         }
     }
-
-
 
     LaunchedEffect(Unit) {
         adminViewModel.fetchAdminProfile(adminRegNo)
@@ -101,121 +90,164 @@ fun SettingScreen(
         adminViewModel.loadUserProfile(context)
     }
 
-    Column(
-        Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(20.dp)
-    ) {
+    Column(Modifier.fillMaxSize()) {
 
-        // 🔥 Profile Image Section
+        // 🔥 SAME HEADER AS HOME SCREEN
         Box(
-            Modifier
-                .size(110.dp)
-                .align(Alignment.CenterHorizontally)
-                .clip(RoundedCornerShape(55.dp))
-                .background(Color(0xFFE0F7FA))
-                .clickable { launcher.launch("image/*") },
-            contentAlignment = Alignment.Center
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    Brush.verticalGradient(
+                        listOf(Color.Black, Color(0xFF303030))
+                    )
+                )
+                .padding(vertical = 20.dp)
         ) {
-            if (imageUrl.isNullOrEmpty()) {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = "Default Profile",
-                    tint = Color.Black,   // 🔥 BLACK ICON
-                    modifier = Modifier.size(70.dp)
-                )
-            } else {
-                AsyncImage(
-                    model = imageUrl,
-                    contentDescription = "Profile Pic",
-                    modifier = Modifier.fillMaxSize()
-                        .clip(CircleShape)
-                )
-            }
-            Box(
-                Modifier
-                    .align(Alignment.BottomEnd)
-                    .size(28.dp)
-                    .background(Color.Black, RoundedCornerShape(14.dp))
-                    .clickable { launcher.launch("image/*") },
-                contentAlignment = Alignment.Center
+            Column(
+                modifier = Modifier.padding(start = 20.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.Edit,
-                    contentDescription = "Edit Pic",
-                    tint = Color.White,
-                    modifier = Modifier.size(16.dp)
+                Text(
+                    text = "Settings ⚙️",
+                    fontSize = 26.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+                Text(
+                    text = "Manage your profile & preferences",
+                    fontSize = 14.sp,
+                    color = Color.White.copy(0.8f)
                 )
             }
         }
 
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(16.dp))
 
-        Text(
-            adminViewModel.adminName.value,
-            fontWeight = FontWeight.Bold,
-            fontSize = 22.sp,
-            modifier = Modifier.align(Alignment.CenterHorizontally)
-        )
-
-        Text(
-            adminViewModel.adminEmail.value,
-            fontSize = 14.sp,
-            color = Color.Gray,
-            modifier = Modifier.align(Alignment.CenterHorizontally)
-        )
-
-        Spacer(Modifier.height(24.dp))
-
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
+        Column(
+            Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
-            StatsCard("Total Posts", adminViewModel.totalPosts)
-            StatsCard("Deleted Posts", adminViewModel.deletedPosts)
-        }
 
-        Spacer(Modifier.height(24.dp))
-        Divider()
+            // 🔥 HEADER WITH PROFILE INSIDE (NO CARD)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(Color.Black, Color(0xFF303030))
+                        )
+                    )
+                    .padding(vertical = 24.dp, horizontal = 20.dp)
+            ) {
 
-        Text("Profile Settings", fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Start,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
 
-        SettingsItem("Edit Profile") { }
-        Divider(Modifier.padding(vertical = 4.dp))
-        SettingsItem("Change Password") { }
+                    // ---------------- PROFILE IMAGE ----------------
+                    Box(
+                        modifier = Modifier
+                            .size(95.dp)
+                            .clip(CircleShape)
+                            .background(Color.White.copy(0.2f))
+                            .clickable { launcher.launch("image/*") },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (imageUrl.isNullOrEmpty()) {
+                            Icon(
+                                Icons.Default.Person,
+                                contentDescription = null,
+                                modifier = Modifier.size(65.dp),
+                                tint = Color.White
+                            )
+                        } else {
+                            AsyncImage(
+                                model = imageUrl,
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .size(95.dp)
+                                    .clip(CircleShape)
+                            )
+                        }
+                    }
 
-        Spacer(Modifier.height(24.dp))
-        Divider()
+                    Spacer(Modifier.width(16.dp))
 
-        Text("App & Support", fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
+                    // ---------------- NAME + EMAIL ----------------
+                    Column(
+                        verticalArrangement = Arrangement.Center
+                    ) {
 
-        SettingsItem("Contact Support") {
-            val intent = Intent(Intent.ACTION_SENDTO).apply {
-                data = Uri.parse("mailto:your-support-email@example.com")
-                putExtra(Intent.EXTRA_SUBJECT, "Support Request")
+                        Text(
+                            text = adminViewModel.adminName.value,
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+
+                        Spacer(Modifier.height(4.dp))
+
+                        Text(
+                            text = adminViewModel.adminEmail.value,
+                            fontSize = 14.sp,
+                            color = Color.White.copy(0.8f)
+                        )
+                    }
+                }
             }
-            context.startActivity(intent)
+
+
+            // ---------------- STATS CARDS (SAME AS HOME SCREEN) --------------------
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                StatCard(
+                    title = "Total",
+                    count = adminViewModel.totalPosts,
+                    icon = Icons.Default.Assessment,
+                    modifier = Modifier.weight(1f)
+                )
+                StatCard(
+                    title = "Deleted",
+                    count = adminViewModel.deletedPosts,
+                    icon = Icons.Default.ReportProblem,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            // ---------------- SETTINGS LIST --------------------
+            SettingOptionItem("Edit Profile") { }
+            SettingOptionItem("Change Password") { }
+            SettingOptionItem("Contact Support") {
+                val intent = Intent(Intent.ACTION_SENDTO).apply {
+                    data = Uri.parse("mailto:your-support-email@example.com")
+                    putExtra(Intent.EXTRA_SUBJECT, "Support Request")
+                }
+                context.startActivity(intent)
+            }
+            SettingOptionItem("Privacy Policy") {
+                val i = Intent(Intent.ACTION_VIEW, Uri.parse("https://yourapp.com/privacy"))
+                context.startActivity(i)
+            }
+
+            // RED LOGOUT
+            SettingOptionItem("Logout", Color.Red) {
+                showLogoutDialog = true
+            }
         }
-
-        Divider(Modifier.padding(vertical = 4.dp))
-
-        SettingsItem("Privacy Policy") {
-            val url = "https://yourapp.com/privacy"
-            val i = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-            context.startActivity(i)
-        }
-
-        Divider(Modifier.padding(vertical = 4.dp))
-
-        SettingsItem("Logout", iconTint = Color.Red) { showLogoutDialog = true }
     }
 
+    // LOGOUT CONFIRMATION DIALOG
     if (showLogoutDialog) {
         AlertDialog(
             onDismissRequest = { showLogoutDialog = false },
             title = { Text("Logout") },
-            text = { Text("Are you sure you want to logout?") },
+            text = { Text("Do you really want to logout?") },
             confirmButton = {
                 TextButton(onClick = {
                     AuthRepo.logout(context)
@@ -232,44 +264,35 @@ fun SettingScreen(
 }
 
 @Composable
-fun StatsCard(label: String, count: Int) {
+fun SettingOptionItem(
+    title: String,
+    tint: Color = Color.Black,
+    onClick: () -> Unit
+) {
     Card(
-        Modifier.size(width = 130.dp, height = 100.dp),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFE1F5FE))
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .border(1.dp, Color.Black, RoundedCornerShape(14.dp)),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        shape = RoundedCornerShape(14.dp)
     ) {
-        Column(
-            Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(count.toString(), fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color(0xFF0277BD))
-            Text(label, fontSize = 12.sp, color = Color.Gray)
+            Text(title, fontSize = 16.sp, color = tint, fontWeight = FontWeight.SemiBold)
+            Icon(
+                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = Color.Gray
+            )
         }
     }
 }
 
-@Composable
-fun SettingsItem(
-    title: String,
-    iconTint: Color = Color.Black,
-    onClick: () -> Unit
-) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .clickable { onClick() }
-            .padding(vertical = 14.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        androidx.compose.material3.Text(title, fontSize = 16.sp, color = iconTint)
-        Icon(
-            Icons.AutoMirrored.Filled.KeyboardArrowRight,
-            contentDescription = null,
-            tint = Color.Gray,
-            modifier = Modifier.size(18.dp)
-        )
-    }
-}
+
 
