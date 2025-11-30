@@ -9,30 +9,40 @@ import javax.inject.Inject
 class StatsRepository @Inject constructor() {
     private val db = FirebaseFirestore.getInstance()
 
-    suspend fun getUserStats(userRegNo: String): UserStats {
-        val postsQuery = db.collection("posts")
-            .whereEqualTo("userRegNo", userRegNo)
+    suspend fun getUserStats(userRegNo: String, userUid: String): UserStats {
+
+        // 🔥 1. Fetch posts by REGISTRATION NUMBER
         val postsSnapshot = db.collection("posts")
             .whereEqualTo("userRegNo", userRegNo)
-            .get().await()
-        postsSnapshot.forEach { doc ->
-            Log.d("STATS_DBG", "Post data: ${doc.data}")
+            .get()
+            .await()
+
+        val lostPosts = postsSnapshot.count {
+            it.getString("category")?.lowercase() == "lost"
         }
-        val lostPosts = postsSnapshot.count { it.getString("category")?.lowercase() == "lost" }
-        val foundPosts = postsSnapshot.count { it.getString("category")?.lowercase() == "found" }
+
+        val foundPosts = postsSnapshot.count {
+            it.getString("category")?.lowercase() == "found"
+        }
+
         val totalPosts = postsSnapshot.size()
-        val claimsQuery = db.collection("claims")
-            .whereEqualTo("userId", userRegNo)
-        val claimsSnapshot = claimsQuery.get().await()
+
+        // 🔥 2. Fetch claims made by this user using UID
+        val claimsSnapshot = db.collection("claimRequests")
+            .whereEqualTo("claimerId", userUid)
+            .get()
+            .await()
+
         val claimsCount = claimsSnapshot.size()
 
-//        return UserStats(totalPosts, lostPosts, foundPosts, claimsCount)
-        val userStats = UserStats(totalPosts, lostPosts, foundPosts, claimsCount)
-        Log.d("STATS_DBG", "Calculated UserStats: $userStats")
-        return userStats
+        val stats = UserStats(totalPosts, lostPosts, foundPosts, claimsCount)
 
+        Log.d("STATS_DBG", "Stats = $stats")
+
+        return stats
     }
 }
+
 
 data class UserStats(
     val totalPosts: Int = 0,

@@ -34,8 +34,12 @@ import java.io.File
 import java.io.IOException
 import java.util.UUID
 
-class UserViewModel(application: Application): AndroidViewModel(application) {
+class UserViewModel(application: Application) : AndroidViewModel(application) {
     private val sharedPref = application.getSharedPreferences("UserSession", Context.MODE_PRIVATE)
+
+    // STORE FIRESTORE USER DOCUMENT
+    private val _userDoc = MutableStateFlow<com.google.firebase.firestore.DocumentSnapshot?>(null)
+    val userDoc: StateFlow<com.google.firebase.firestore.DocumentSnapshot?> = _userDoc
 
     // ✅ Get saved user data
     private val savedRegNo = sharedPref.getString("regNo", "") ?: ""
@@ -61,22 +65,164 @@ class UserViewModel(application: Application): AndroidViewModel(application) {
     //notifications
     val _notifications = MutableStateFlow<List<NotificationDataClass>>(emptyList())
     val notifications: StateFlow<List<NotificationDataClass>> = _notifications
-   //claims
-   private val _claims = mutableStateOf<List<ClaimRequest>>(emptyList())
-    val claims = _claims
 
-    fun setUserData(userName: String, userReg: String,userBio: String = "") {
+    //claims
+    private val _claims = mutableStateOf<List<ClaimRequest>>(emptyList())
+    val claims = _claims
+    val singlePost = mutableStateOf<Post?>(null)
+
+    fun loadSinglePost(postId: String) {
+        viewModelScope.launch {
+            val doc = FirebaseFirestore.getInstance()
+                .collection("posts")
+                .document(postId)
+                .get()
+                .await()
+
+            singlePost.value = doc.toObject(Post::class.java)?.copy(id = postId)
+        }
+    }
+    fun updatePost(postId: String, title: String, description: String, location: String) {
+        viewModelScope.launch {
+            try {
+                FirebaseFirestore.getInstance()
+                    .collection("posts")
+                    .document(postId)
+                    .update(
+                        mapOf(
+                            "title" to title,
+                            "description" to description,
+                            "location" to location
+                        )
+                    )
+
+                Toast.makeText(getApplication(), "Post Updated!", Toast.LENGTH_SHORT).show()
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+                Toast.makeText(getApplication(), "Failed to update", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+    var isSubmittingProof = mutableStateOf(false)
+
+    fun submitProofFinal(
+        context: Context,
+        postId: String,
+        description: String,
+        imageFile: File?,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        isSubmittingProof.value = true
+
+        val currentUid = FirebaseAuth.getInstance().currentUser?.uid
+        if (currentUid == null) {
+            isSubmittingProof.value = false
+            onError("User not logged in")
+            return
+        }
+
+        // Create map that allows nullable values
+        val proofData = mutableMapOf<String, Any?>(
+            "postId" to postId,
+            "userId" to currentUid,
+            "description" to description,
+            "timestamp" to System.currentTimeMillis(),
+            "status" to "Pending"
+        )
+
+        // IF IMAGE EXISTS → Upload first
+        if (imageFile != null) {
+
+            CloudinaryHelper.uploadImage(imageFile) { success, url ->
+                if (!success || url == null) {
+                    isSubmittingProof.value = false
+                    onError("Image upload failed!")
+                    return@uploadImage
+                }
+
+                proofData["imageUrl"] = url
+                saveProofAndNotifyAdmin(proofData, postId, onSuccess, onError)
+            }
+
+        } else {
+            saveProofAndNotifyAdmin(proofData, postId, onSuccess, onError)
+        }
+    }
+
+    private fun saveProofAndNotifyAdmin(
+        proofData: MutableMap<String, Any?>,
+        postId: String,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        val db = FirebaseFirestore.getInstance()
+
+        // REMOVE NULL VALUES → required for Firestore
+        val safeMap = proofData.filterValues { it != null } as Map<String, Any>
+
+        db.collection("proofs")
+            .add(safeMap)
+            .addOnSuccessListener {
+
+                db.collection("posts").document(postId).get()
+                    .addOnSuccessListener { postDoc ->
+
+                        val title = postDoc.getString("title") ?: "Item"
+                        val uname = name.value
+
+                        val notif = mapOf(
+                            "type" to "CLAIM_PROOF",
+                            "title" to "New Proof Submitted",
+                            "subtitle" to "$uname submitted proof for $title",
+                            "postId" to postId,
+                            "claimedBy" to uname,
+                            "timestamp" to System.currentTimeMillis(),
+                            "read" to false,
+                            "message" to safeMap["description"],
+                            "proofImageUrl" to safeMap["imageUrl"]
+                        )
+
+                        db.collection("admin_notifications")
+                            .add(notif)
+                            .addOnSuccessListener {
+                                isSubmittingProof.value = false
+                                onSuccess()
+                            }
+                            .addOnFailureListener {
+                                isSubmittingProof.value = false
+                                onError("Notification failed!")
+                            }
+                    }
+                    .addOnFailureListener {
+                        isSubmittingProof.value = false
+                        onError("Post fetch failed!")
+                    }
+
+            }
+            .addOnFailureListener {
+                isSubmittingProof.value = false
+                onError("Saving proof failed!")
+            }
+    }
+
+
+
+    fun setUserData(userName: String, userReg: String, userBio: String = "") {
         name.value = userName
         regNo.value = userReg
         bio.value = userBio
         updateUserProfileField("name", userName)
         updateUserProfileField("regNo", userReg)
     }
+
     fun saveUserToDataStore(context: Context) {
         viewModelScope.launch {
             DataStoreManager.saveUserData(context, name.value, regNo.value)
         }
     }
+
     fun loadUserFromDataStore(context: Context) {
         viewModelScope.launch {
             val (storedName, storedReg) = DataStoreManager.getUserData(context)
@@ -87,41 +233,70 @@ class UserViewModel(application: Application): AndroidViewModel(application) {
             }
         }
     }
+
     fun fetchUserProfile(userRegNo: String) {
         viewModelScope.launch {
             try {
                 val doc = db.collection("users").document(userRegNo).get().await()
+
                 if (doc.exists()) {
+                    _userDoc.value = doc   // ← ADD THIS ✔
+
                     name.value = doc.getString("name") ?: ""
                     regNo.value = doc.getString("regNo") ?: ""
                     bio.value = doc.getString("bio") ?: ""
                     profileImageUrl.value = doc.getString("profileImageUrl") ?: ""
                 }
-                fetchUserStats(userRegNo)
+
+                fetchUserStats()
+
             } catch (e: Exception) {
                 e.printStackTrace()
             }
         }
     }
+
+
     // --- Fetch stats ---
-    fun fetchUserStats(userRegNo: String) {
+    fun fetchUserStats() {
+        val uid = FirebaseAuth.getInstance().currentUser!!.uid
+
         viewModelScope.launch {
             try {
-                val regNo = regNo.value // <-- userViewModel.regNo.value hona chahiye, not uid
+                val regNo = _userDoc.value?.getString("regNo") ?: ""   // userDoc StateFlow se regNo
+
+                if (regNo.isEmpty()) {
+                    Log.e("PROFILE_SCREEN", "RegNo is empty! Cannot fetch stats.")
+                    return@launch
+                }
+
                 Log.d("PROFILE_SCREEN", "FETCHING STATS FOR: $regNo")
-                _userStats.value = statsRepository.getUserStats(regNo)
+
+                _userStats.value = statsRepository.getUserStats(
+                    userRegNo = regNo,
+                    userUid = uid
+                )
+
             } catch (e: Exception) {
                 e.printStackTrace()
             }
         }
     }
+
+
     // 🧠 Update Firestore user profile data
     private fun updateUserProfileField(field: String, value: Any) {
         val regNo = regNo.value
         firestore.collection("users").document(regNo)
             .update(field, value)
-            .addOnFailureListener { Log.e("UserViewModel", "Failed to update $field: ${it.message}") }
+            .addOnFailureListener {
+                Log.e(
+                    "UserViewModel",
+                    "Failed to update $field: ${it.message}"
+                )
+            }
     }
+
     // ✨ Profile Image Upload (from gallery)
     fun uploadProfileImageToCloudinary(
         context: Context,
@@ -135,24 +310,27 @@ class UserViewModel(application: Application): AndroidViewModel(application) {
             return
         }
 
-        // Use the same CloudinaryHelper
         CloudinaryHelper.uploadImage(file) { success, url ->
             if (success && url != null) {
-                val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return@uploadImage
+                val regNo = regNo.value    // ← FIXED ✔
+
                 FirebaseFirestore.getInstance()
                     .collection("users")
-                    .document(uid)
+                    .document(regNo)
                     .update("profileImageUrl", url)
                     .addOnSuccessListener {
                         profileImageUrl.value = url
                         onSuccess()
                     }
-                    .addOnFailureListener { e -> onError("Firestore update failed: ${e.message}") }
+                    .addOnFailureListener { e ->
+                        onError("Firestore update failed: ${e.message}")
+                    }
             } else {
                 onError("Cloudinary upload failed")
             }
         }
     }
+
 
     /** Update user name & bio in Firestore */
     fun updateUserProfile(context: Context, newName: String, newBio: String) {
@@ -252,6 +430,7 @@ class UserViewModel(application: Application): AndroidViewModel(application) {
             myPosts.value = posts
         }
     }
+
     //je post delete krne ke leia
     fun deletePost(postId: String) {
         viewModelScope.launch {
@@ -260,6 +439,7 @@ class UserViewModel(application: Application): AndroidViewModel(application) {
             loadAllPosts()
         }
     }
+
     fun submitClaimRequest(
         post: Post,
         onSuccess: () -> Unit,
@@ -320,18 +500,17 @@ class UserViewModel(application: Application): AndroidViewModel(application) {
     }
 
 
-
     ////to send notification ....
     fun sendPostNotification(postType: String, title: String, message: String) {
-       val emoji = when(postType.lowercase()) {
-           "lost" -> "\uD83D\uDEA8"  // ❓ (Question Mark)
-           "found" -> "\uD83D\uDD0E" // 🔎 Magnifying Glass emoji (Found)
-           else -> ""
-       }
-       val fullTitle = "$emoji $title"
-       val fullMessage = "$emoji $message"
+        val emoji = when (postType.lowercase()) {
+            "lost" -> "\uD83D\uDEA8"  // ❓ (Question Mark)
+            "found" -> "\uD83D\uDD0E" // 🔎 Magnifying Glass emoji (Found)
+            else -> ""
+        }
+        val fullTitle = "$emoji $title"
+        val fullMessage = "$emoji $message"
         val firestore = FirebaseFirestore.getInstance()
-       val notification = NotificationDataClass(
+        val notification = NotificationDataClass(
             title = fullTitle,
             message = fullMessage,
             type = postType,
@@ -339,7 +518,7 @@ class UserViewModel(application: Application): AndroidViewModel(application) {
             userId = null,
             isRead = false
         )
-       Log.d("NotificationDebug", "Trying to add notification: $notification")
+        Log.d("NotificationDebug", "Trying to add notification: $notification")
 
         firestore.collection("notifications")
             .add(notification)
@@ -353,13 +532,15 @@ class UserViewModel(application: Application): AndroidViewModel(application) {
                 Log.e("NotificationDebug", "Error adding notification: ${it.message}")
 
             }
-       sendOneSignalNotification(fullTitle, fullMessage)
+        sendOneSignalNotification(fullTitle, fullMessage)
 
-   }
+    }
+
     private fun sendOneSignalNotification(title: String, message: String) {
         val url = "https://onesignal.com/api/v1/notifications"
         val appId = "812c59fb-aed1-4bf7-b899-b87dbc43880e"
-        val apiKey = "os_v2_app_qewft65o2ff7poezxb63yq4ib3pmek4kto3edmuywjkntg4zq4dmtf4bwcvdu7ucu42mhov3cyhyuxixkoxfzu322w56x7olphzc6gi"
+        val apiKey =
+            "os_v2_app_qewft65o2ff7poezxb63yq4ib3pmek4kto3edmuywjkntg4zq4dmtf4bwcvdu7ucu42mhov3cyhyuxixkoxfzu322w56x7olphzc6gi"
         val json = """
         {
             "app_id": "$appId",
@@ -379,12 +560,12 @@ class UserViewModel(application: Application): AndroidViewModel(application) {
             override fun onFailure(call: Call, e: IOException) {
                 Log.e("OneSignal", "Failed: ${e.message}")
             }
+
             override fun onResponse(call: Call, response: Response) {
                 Log.d("OneSignal", "Resp: ${response.body?.string()}")
             }
         })
     }
-
 
 
     fun observeUserNotifications(userId: String) {
@@ -393,16 +574,19 @@ class UserViewModel(application: Application): AndroidViewModel(application) {
                 val allNotifications = snapshot?.documents?.mapNotNull { doc ->
                     doc.toObject(NotificationDataClass::class.java)?.copy(id = doc.id)
                 } ?: emptyList()
-                val userNotifications = allNotifications.filter { it.userId == userId || it.userId == null }
+                val userNotifications =
+                    allNotifications.filter { it.userId == userId || it.userId == null }
                 _notifications.value = userNotifications.sortedByDescending { it.timestamp }
             }
     }
-   ////notification delete krne ke leia ...
+
+    ////notification delete krne ke leia ...
     fun deleteNotification(notificationId: String) {
         firestore.collection("notifications")
             .document(notificationId)
             .delete()
     }
+
     //notification read krne vla
     fun markNotificationAsRead(notificationId: String) {
         firestore.collection("notifications")

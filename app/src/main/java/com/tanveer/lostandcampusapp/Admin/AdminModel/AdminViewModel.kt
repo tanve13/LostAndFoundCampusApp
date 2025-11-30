@@ -300,16 +300,32 @@ class AdminViewModel @Inject constructor(
         claimId: String,
         postId: String,
         onSuccess: () -> Unit,
-        onFailure: () -> Unit
+        onFailure: (String) -> Unit
     ) {
-        firestore.collection("claims").document(claimId)
+        val db = FirebaseFirestore.getInstance()
+
+        db.collection("claimRequests")
+            .document(claimId)
             .update("status", "APPROVED")
-            .addOnSuccessListener { onSuccess() }
-            .addOnFailureListener { onFailure() }
+            .addOnSuccessListener {
+                db.collection("posts")
+                    .document(postId)
+                    .update("status", "RESOLVED")
+                    .addOnSuccessListener {
+                        onSuccess()
+                    }
+                    .addOnFailureListener { onFailure("Failed to update post status") }
+            }
+            .addOnFailureListener { onFailure("Failed to approve claim") }
     }
 
-    fun rejectClaim(claimId: String, onSuccess: () -> Unit, onFailure: () -> Unit) {
-        firestore.collection("claims").document(claimId)
+    fun rejectClaim(
+        claimId: String,
+        onSuccess: () -> Unit,
+        onFailure: () -> Unit
+    ) {
+        firestore.collection("claimRequests")
+            .document(claimId)
             .update("status", "REJECTED")
             .addOnSuccessListener { onSuccess() }
             .addOnFailureListener { onFailure() }
@@ -342,18 +358,18 @@ class AdminViewModel @Inject constructor(
     fun fetchClaimRequests() {
         _isClaimLoading.value = true
 
-        var query = firestore.collection("admin_notifications")
+        var query: Query = firestore.collection("claimRequests")
 
         when (claimFilter) {
-            "PENDING" -> query.whereEqualTo("status", "PENDING")
-            "APPROVED" -> query.whereEqualTo("status", "APPROVED")
-            "REJECTED" -> query.whereEqualTo("status", "REJECTED")
-            else -> query
+            "PENDING" -> query = query.whereEqualTo("status", "PENDING")
+            "APPROVED" -> query = query.whereEqualTo("status", "APPROVED")
+            "REJECTED" -> query = query.whereEqualTo("status", "REJECTED")
         }
 
-        query.get()
-            .addOnSuccessListener { result ->
-                val list = result.documents.mapNotNull { it.toObject(ClaimRequest::class.java) }
+        query.orderBy("claimTimestamp", Query.Direction.DESCENDING)
+            .get()
+            .addOnSuccessListener { snapshot ->
+                val list = snapshot.documents.mapNotNull { it.toObject(ClaimRequest::class.java) }
                 _claimRequests.value = list
                 _isClaimLoading.value = false
             }
@@ -361,6 +377,9 @@ class AdminViewModel @Inject constructor(
                 _isClaimLoading.value = false
             }
     }
+
+
+
 
     fun refreshClaimRequests() {
         fetchClaimRequests()

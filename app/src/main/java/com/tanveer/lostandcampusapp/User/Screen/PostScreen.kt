@@ -26,173 +26,7 @@ import com.tanveer.lostandcampusapp.User.navigation.BottomNavItems
 import com.tanveer.lostandcampusapp.viewModel.UserViewModel
 import java.io.File
 
-//@OptIn(ExperimentalMaterial3Api::class)
-//@Composable
-//fun PostScreen(
-//    navController: NavController,
-//    viewModel: UserViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
-//) {
-//    var selectedCategory by remember { mutableStateOf("Lost") }
-//    var title by remember { mutableStateOf("") }
-//    var description by remember { mutableStateOf("") }
-//    var location by remember { mutableStateOf("") }
-//    val date = remember { Calendar.getInstance().time.toString() }
-//    var imageUri by remember { mutableStateOf<Uri?>(null) }
-//    var isLoading by remember { mutableStateOf(false) }
-//    val context = LocalContext.current
-//
-//    // Image picker launcher
-//    val launcher = rememberLauncherForActivityResult(
-//        contract = ActivityResultContracts.GetContent()
-//    ) { uri: Uri? ->
-//        imageUri = uri
-//    }
-//    Column(
-//        modifier = Modifier
-//            .fillMaxSize()
-//            .padding(16.dp)
-//            .verticalScroll(rememberScrollState()),
-//        verticalArrangement = Arrangement.Top,
-//        horizontalAlignment = Alignment.Start
-//    ) {
-//        Text(
-//            text = " Create a Post",
-//            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-//            modifier = Modifier.padding(bottom = 16.dp)
-//        )
-//
-//        Row(
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .padding(bottom = 16.dp),
-//            horizontalArrangement = Arrangement.SpaceEvenly
-//        ) {
-//            listOf("Lost", "Found").forEach { category ->
-//                FilterChip(
-//                    selected = selectedCategory == category,
-//                    onClick = { selectedCategory = category },
-//                    label = { Text(category) }
-//                )
-//            }
-//        }
-//        if (imageUri != null) {
-//            Spacer(modifier = Modifier.height(16.dp))
-//            AsyncImage(
-//                model = imageUri,
-//                contentDescription = "Selected Image",
-//                modifier = Modifier
-//                    .fillMaxWidth()
-//                    .height(200.dp)
-//            )
-//        }
-//        Button(
-//            onClick = { launcher.launch("image/*") },
-//            modifier = Modifier.fillMaxWidth()
-//        ) {
-//            Text("Upload Image")
-//        }
-//
-//
-//        Spacer(modifier = Modifier.height(20.dp))
-//        Spacer(modifier = Modifier.height(20.dp))
-//
-//        OutlinedTextField(
-//            value = title,
-//            onValueChange = { title = it },
-//            label = { Text(" Title") },
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .padding(bottom = 16.dp)
-//        )
-//
-//        OutlinedTextField(
-//            value = description,
-//            onValueChange = { description = it },
-//            label = { Text(" Description") },
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .padding(bottom = 16.dp),
-//            minLines = 3
-//        )
-//
-//        OutlinedTextField(
-//            value = location,
-//            onValueChange = { location = it },
-//            label = { Text(" Location") },
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .padding(bottom = 16.dp)
-//        )
-//
-//        OutlinedTextField(
-//            value = date,
-//            onValueChange = {},
-//            label = { Text(" Date") },
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .padding(bottom = 16.dp),
-//            enabled = false
-//        )
-//
-//        Button(
-//            onClick = {
-//                imageUri?.let { uri ->
-//                    val file = uriToFile(context, uri)
-//                    isLoading = true
-//                    viewModel.submitPost(
-//                        category = selectedCategory,
-//                        title = title,
-//                        desc = description,
-//                        location = location,
-//                        imageFile = file,
-//                        onSuccess = {
-//                            isLoading = false
-//                            Toast.makeText(context, " Post submitted!", Toast.LENGTH_SHORT).show()
-//                            navController.navigate(BottomNavItems.Home.route) {
-//                                popUpTo(BottomNavItems.Post.route) { inclusive = true }
-//                            }
-//                        },
-//                        onError = { msg ->
-//                            isLoading = false
-//                            Toast.makeText(context, " $msg", Toast.LENGTH_SHORT).show()
-//                        }
-//                    )
-//                } ?: run {
-//                    Toast.makeText(context, "️ Please select an image", Toast.LENGTH_SHORT).show()
-//                }
-//
-//
-//            },
-//            enabled = !isLoading,
-//            modifier = Modifier
-//                .fillMaxWidth(0.6f)
-//                .height(50.dp),
-//            shape = MaterialTheme.shapes.medium
-//        ) {
-//            if (isLoading) {
-//                CircularProgressIndicator(
-//                    color = Color.White,
-//                    strokeWidth = 2.dp,
-//                    modifier = Modifier.size(24.dp)
-//                )
-//            } else {
-//                Text("Submit Post")
-//            }
-//        }
-//
-//    }
-//}
-//
-//fun uriToFile(context: Context, uri: Uri): File {
-//    val inputStream = context.contentResolver.openInputStream(uri)
-//    val file = File(context.cacheDir, "temp_image.jpg")
-//    inputStream?.use { input ->
-//        file.outputStream().use { output ->
-//            input.copyTo(output)
-//        }
-//    }
-//    return file
-//}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PostScreen(
@@ -208,137 +42,189 @@ fun PostScreen(
     var isLoading by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
-    // Image picker
     val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
+        ActivityResultContracts.GetContent()
     ) { uri: Uri? -> imageUri = uri }
 
     Surface(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFFF5F7FB))
+        modifier = Modifier.fillMaxSize(),
+        color = Color(0xFFF5F6FA)
     ) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(24.dp),
+                .padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "New Lost/Found Post",
-                style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
+                text = "Create Lost / Found Post",
+                style = MaterialTheme.typography.headlineMedium.copy(
+                    fontWeight = FontWeight.Bold
+                ),
                 modifier = Modifier.padding(bottom = 20.dp)
             )
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                listOf("Lost", "Found").forEach { category ->
-                    FilterChip(
-                        selected = selectedCategory == category,
-                        onClick = { selectedCategory = category },
-                        label = { Text(category) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = if (category == "Lost") Color(0xFFF67D7D) else Color(0xFF7DCF9D),
-                            containerColor = Color.White
-                        )
-                    )
-                }
-            }
-            if (imageUri != null) {
-                AsyncImage(
-                    model = imageUri,
-                    contentDescription = "Item Image",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Color(0xFFE8E8E8))
-                )
-            }
-            Button(
-                onClick = { launcher.launch("image/*") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 12.dp)
-            ) {
-                Text("Upload Image")
-            }
-            OutlinedTextField(
-                value = title,
-                onValueChange = { title = it },
-                label = { Text("Title") },
-                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
-            )
-            OutlinedTextField(
-                value = description,
-                onValueChange = { description = it },
-                label = { Text("Description") },
-                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                minLines = 3
-            )
-            OutlinedTextField(
-                value = location,
-                onValueChange = { location = it },
-                label = { Text("Location") },
-                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
-            )
-            OutlinedTextField(
-                value = date,
-                onValueChange = {},
-                label = { Text("Date") },
-                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                enabled = false
-            )
 
-            Spacer(modifier = Modifier.height(24.dp))
-            Button(
-                onClick = {
-                    imageUri?.let { uri ->
-                        val file = uriToFile(context, uri)
-                        isLoading = true
-                        viewModel.submitPost(
-                            category = selectedCategory,
-                            title = title,
-                            desc = description,
-                            location = location,
-                            imageFile = file,
-                            onSuccess = {
-                                isLoading = false
-                                Toast.makeText(context, "Post submitted!", Toast.LENGTH_SHORT).show()
-                                navController.navigate(BottomNavItems.Home.route) {
-                                    popUpTo(BottomNavItems.Post.route) { inclusive = true }
-                                }
-                            },
-                            onError = { msg ->
-                                isLoading = false
-                                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
-                            }
-                        )
-                    } ?: run {
-                        Toast.makeText(context, "Please select an image", Toast.LENGTH_SHORT).show()
-                    }
-                },
-                enabled = !isLoading,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
-                shape = RoundedCornerShape(16.dp)
+            // CARD UI
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color.White
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
             ) {
-                if (isLoading) {
-                    CircularProgressIndicator(
-                        color = Color.White,
-                        strokeWidth = 2.dp,
-                        modifier = Modifier.size(24.dp)
+                Column(modifier = Modifier.padding(18.dp)) {
+
+                    // CATEGORY CHIPS
+                    Text(
+                        text = "Select Category",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                     )
-                } else {
-                    Text("Submit Post", style = MaterialTheme.typography.titleMedium)
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 10.dp, bottom = 18.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        listOf("Lost", "Found").forEach { category ->
+                            FilterChip(
+                                selected = selectedCategory == category,
+                                onClick = { selectedCategory = category },
+                                label = {
+                                    Text(
+                                        text = category,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor =
+                                    if (category == "Lost") Color(0xFFE57373)
+                                    else Color(0xFF64B687),
+                                    containerColor = Color(0xFFF0F0F0)
+                                ),
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                        }
+                    }
+
+                    // IMAGE PREVIEW
+                    if (imageUri != null) {
+                        AsyncImage(
+                            model = imageUri,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(220.dp)
+                                .clip(RoundedCornerShape(15.dp))
+                        )
+                        Spacer(modifier = Modifier.height(10.dp))
+                    }
+
+                    Button(
+                        onClick = { launcher.launch("image/*") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(14.dp)
+                    ) {
+                        Text("Upload Image")
+                    }
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    // TEXT FIELDS
+                    OutlinedTextField(
+                        value = title,
+                        onValueChange = { title = it },
+                        label = { Text("Title") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(14.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    OutlinedTextField(
+                        value = description,
+                        onValueChange = { description = it },
+                        label = { Text("Description") },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 3,
+                        shape = RoundedCornerShape(14.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    OutlinedTextField(
+                        value = location,
+                        onValueChange = { location = it },
+                        label = { Text("Location") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(14.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    OutlinedTextField(
+                        value = date,
+                        onValueChange = {},
+                        label = { Text("Date") },
+                        enabled = false,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(14.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // SUBMIT BUTTON
+                    Button(
+                        onClick = {
+                            imageUri?.let { uri ->
+                                val file = uriToFile(context, uri)
+                                isLoading = true
+                                viewModel.submitPost(
+                                    category = selectedCategory,
+                                    title = title,
+                                    desc = description,
+                                    location = location,
+                                    imageFile = file,
+                                    onSuccess = {
+                                        isLoading = false
+                                        Toast.makeText(context, "Post submitted!", Toast.LENGTH_SHORT).show()
+                                        navController.navigate(BottomNavItems.Home.route) {
+                                            popUpTo(BottomNavItems.Post.route) { inclusive = true }
+                                        }
+                                    },
+                                    onError = { msg ->
+                                        isLoading = false
+                                        Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                                    }
+                                )
+                            } ?: Toast.makeText(context, "Select an image first!", Toast.LENGTH_SHORT).show()
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        shape = RoundedCornerShape(18.dp)
+                    ) {
+                        if (isLoading) {
+                            CircularProgressIndicator(
+                                color = Color.White,
+                                strokeWidth = 2.dp,
+                                modifier = Modifier.size(26.dp)
+                            )
+                        } else {
+                            Text(
+                                "Submit Post",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
                 }
             }
         }
     }
 }
+
 fun uriToFile(context: Context, uri: Uri): File {
     val inputStream = context.contentResolver.openInputStream(uri)
     val file = File(context.cacheDir, "temp_image.jpg")

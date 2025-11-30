@@ -18,6 +18,7 @@ import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.google.firebase.auth.FirebaseAuth
 import com.tanveer.lostandcampusapp.Admin.navigation.AdminNavigation
 import com.tanveer.lostandcampusapp.User.navigation.MainNavigation
+import com.tanveer.lostandcampusapp.screens.SplashScreen
 import com.tanveer.lostandcampusapp.ui.theme.LostAndCampusAppTheme
 import com.tanveer.lostandcampusapp.ui.theme.ThemePreference
 import com.tanveer.lostandcampusapp.viewModel.UserViewModel
@@ -81,9 +82,12 @@ class MainActivity : ComponentActivity() {
         NavHost(
             navController = navController,
 //            startDestination = if (currentUser != null) "userHome" else "signup"
-            startDestination = startDestination
+            startDestination = "splash"
 
         ) {
+            composable("splash") {
+                SplashScreen(navController)
+            }
             composable("signup") {
                 SignUpScreen(
                     onSignUpClick = { name, email, regNo, password ->

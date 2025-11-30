@@ -153,55 +153,49 @@ fun ItemsDetailsScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                 }
 
-                // Action buttons row (Chat / Provide proof / Claim)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Button(
-                        onClick = {
-                            // Navigate to chat — same chat id pattern you used
-                            val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
-                            val chatId = listOf(currentUserId, post.userId).sorted().joinToString("_")
-                            navController.navigate("chat/$chatId/${post.userName}")
-                        },
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
+                val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+
+                if (post.userId != currentUserId) { // ONLY show if not own post
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Text("Chat", color = Color.White)
-                    }
-
-                    if (post.category.equals("Lost", true)) {
-                        OutlinedButton(
+                        // Chat button
+                        Button(
                             onClick = {
-                                // navigate to a proof upload screen for this post
-                                navController.navigate("claimProof/${post.id}")
+                                val chatId = listOf(currentUserId, post.userId).sorted().joinToString("_")
+                                navController.navigate("chat/$chatId/${post.userName}")
                             },
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
                         ) {
-                            Text("Provide Proof")
-                        }
-                    } else {
-                        // For found items you might want a 'Mark as returned' or 'Contact owner' action
-                        OutlinedButton(
-                            onClick = {
-                                viewModel.submitClaimRequest(
-                                    post = post,
-                                    onSuccess = {
-                                        Toast.makeText(context, "Claim request sent to admin", Toast.LENGTH_SHORT).show()
-                                    },
-                                    onError = {
-                                        Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-                                    }
-                                )
-                            },
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text("Claim")
+                            Text("Chat", color = Color.White)
                         }
 
+                        if (post.category.equals("Lost", true)) {
+                            OutlinedButton(
+                                onClick = { navController.navigate("claimProof/${post.id}") },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("Provide Proof")
+                            }
+                        } else {
+                            OutlinedButton(
+                                onClick = {
+                                    viewModel.submitClaimRequest(
+                                        post = post,
+                                        onSuccess = { Toast.makeText(context, "Claim request sent to admin", Toast.LENGTH_SHORT).show() },
+                                        onError = { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
+                                    )
+                                },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("Claim")
+                            }
+                        }
                     }
                 }
+
 
                 Spacer(modifier = Modifier.height(20.dp))
             }

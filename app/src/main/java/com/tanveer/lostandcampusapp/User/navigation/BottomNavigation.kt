@@ -23,6 +23,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
 import com.google.firebase.auth.FirebaseAuth
 import com.tanveer.lostandcampusapp.User.Screen.ChatScreen
+import com.tanveer.lostandcampusapp.User.Screen.ClaimProofScreen
+import com.tanveer.lostandcampusapp.User.Screen.EditPostScreen
 import com.tanveer.lostandcampusapp.User.Screen.HomeScreen
 import com.tanveer.lostandcampusapp.User.Screen.ItemsDetailsScreen
 import com.tanveer.lostandcampusapp.User.Screen.NotificationScreen
@@ -46,11 +48,26 @@ fun BottomNavigation(
         composable(BottomNavItems.Home.route) {
           HomeScreen(viewModel = userViewModel, navController)
         }
+        composable("postDetails/{postId}") { backStackEntry ->
+            val postId = backStackEntry.arguments?.getString("postId") ?: ""
+            ItemsDetailsScreen(postId = postId, viewModel = userViewModel, navController = navController)
+        }
+        composable("claimProof/{postId}") { backStackEntry ->
+            ClaimProofScreen(
+                postId = backStackEntry.arguments?.getString("postId") ?: "",
+                viewModel = userViewModel,
+                navController = navController
+            )
+        }
         composable(BottomNavItems.MyPost.route) {
-         UserMyPostScreen(viewModel = userViewModel)
+         UserMyPostScreen(viewModel = userViewModel,navController)
         }
         composable(BottomNavItems.Post.route) {
            PostScreen(navController, viewModel = userViewModel)
+        }
+        composable("edit_post/{postId}") { backStackEntry ->
+            val postId = backStackEntry.arguments?.getString("postId") ?: ""
+            EditPostScreen(viewModel = userViewModel, postId)
         }
 
         composable(BottomNavItems.Notification.route) {
@@ -72,23 +89,6 @@ fun BottomNavigation(
         }
 
         composable(
-            route = "claim/{postId}",
-            arguments = listOf(navArgument("postId") { type = NavType.StringType })
-        ) { backStackEntry ->
-
-            val postId = backStackEntry.arguments?.getString("postId")
-            val posts = userViewModel.allPosts.value
-            val post = posts.find { it.id == postId }
-
-//            post?.let {
-//               ClaimScreen(
-//                    post = it,
-//                    viewModel = userViewModel,
-//                    navController = navController
-//                )
-//            }
-        }
-        composable(
             route = "chat/{chatId}/{postOwnerName}",
             arguments = listOf(
                 navArgument("chatId") { type = NavType.StringType },
@@ -102,13 +102,6 @@ fun BottomNavigation(
                 postOwnerName = postOwnerName
             )
         }
-        composable("postDetails/{postId}") { backStackEntry ->
-            val postId = backStackEntry.arguments?.getString("postId") ?: ""
-            ItemsDetailsScreen(postId = postId, viewModel = userViewModel, navController = navController)
-        }
-
-
-
     }
 }
 

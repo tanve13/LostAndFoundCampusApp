@@ -67,6 +67,7 @@ fun AdminClaimsScreen(adminViewModel: AdminViewModel = hiltViewModel()) {
         Column(
             modifier = Modifier.fillMaxSize().padding(12.dp)
         ) {
+            // --- Filter buttons ---
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -80,21 +81,21 @@ fun AdminClaimsScreen(adminViewModel: AdminViewModel = hiltViewModel()) {
                     Button(
                         onClick = {
                             adminViewModel.claimFilter = filter.uppercase()
-                            adminViewModel.fetchClaimRequests()   },
+                            adminViewModel.fetchClaimRequests()
+                        },
                         shape = RoundedCornerShape(22.dp),
                         colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = chipBg),
                         contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 18.dp, vertical = 6.dp),
                         elevation = androidx.compose.material3.ButtonDefaults.buttonElevation(2.dp)
                     ) {
-                        Text(
-                            text = filter,
-                            color = chipText,
-                            style = MaterialTheme.typography.labelLarge
-                        )
+                        Text(text = filter, color = chipText, style = MaterialTheme.typography.labelLarge)
                     }
                 }
             }
+
             Spacer(modifier = Modifier.height(12.dp))
+
+            // --- Claim list ---
             LazyColumn(
                 Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -122,6 +123,7 @@ fun AdminClaimsScreen(adminViewModel: AdminViewModel = hiltViewModel()) {
         }
     }
 
+    // --- Claim detail dialog with proof image ---
     if (showDetailDialog && selectedClaim != null) {
         ClaimDetailDialog(
             claim = selectedClaim!!,
@@ -129,6 +131,7 @@ fun AdminClaimsScreen(adminViewModel: AdminViewModel = hiltViewModel()) {
         )
     }
 
+    // --- Approve/Reject confirmation dialog ---
     if (showConfirmDialog && claimToActOn != null) {
         AlertDialog(
             onDismissRequest = { setShowConfirmDialog(false) },
@@ -144,9 +147,7 @@ fun AdminClaimsScreen(adminViewModel: AdminViewModel = hiltViewModel()) {
                                 setShowConfirmDialog(false)
                                 adminViewModel.fetchClaimRequests()
                             },
-                            onFailure = {
-                                setShowConfirmDialog(false)
-                            }
+                            onFailure = { setShowConfirmDialog(false) }
                         )
                     } else {
                         adminViewModel.rejectClaim(
@@ -155,9 +156,7 @@ fun AdminClaimsScreen(adminViewModel: AdminViewModel = hiltViewModel()) {
                                 setShowConfirmDialog(false)
                                 adminViewModel.fetchClaimRequests()
                             },
-                            onFailure = {
-                                setShowConfirmDialog(false)
-                            }
+                            onFailure = { setShowConfirmDialog(false) }
                         )
                     }
                 }) {
@@ -165,14 +164,11 @@ fun AdminClaimsScreen(adminViewModel: AdminViewModel = hiltViewModel()) {
                 }
             },
             dismissButton = {
-                TextButton(onClick = { setShowConfirmDialog(false) }) {
-                    Text("Cancel")
-                }
+                TextButton(onClick = { setShowConfirmDialog(false) }) { Text("Cancel") }
             }
         )
     }
 }
-
 @Composable
 fun ClaimListItem(
     claim: ClaimRequest,
@@ -196,6 +192,18 @@ fun ClaimListItem(
                 contentDescription = "Item Image",
                 modifier = Modifier.size(70.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFFE0E0E0))
             )
+            // --- Proof thumbnail (small) ---
+            if (!claim.proofImageUrl.isNullOrBlank()) {
+                Spacer(modifier = Modifier.width(4.dp))
+                AsyncImage(
+                    model = claim.proofImageUrl,
+                    contentDescription = "Proof Thumbnail",
+                    modifier = Modifier
+                        .size(30.dp)
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(Color.LightGray)
+                )
+            }
             Spacer(modifier = Modifier.width(10.dp))
             Column(Modifier.weight(1f)) {
                 Text(claim.itemTitle, fontWeight = FontWeight.Bold)
@@ -215,7 +223,6 @@ fun ClaimListItem(
         }
     }
 }
-
 @Composable
 fun ClaimDetailDialog(claim: ClaimRequest, onDismiss: () -> Unit) {
     AlertDialog(
@@ -232,12 +239,22 @@ fun ClaimDetailDialog(claim: ClaimRequest, onDismiss: () -> Unit) {
                 Text("Claimed by: ${claim.userName}")
                 Text("User email: ${claim.userEmail}")
                 Text("Claim Description: ${claim.description}")
-                if (claim.proofImageUrl != null)
+
+                // ✅ Proof image
+                if (!claim.proofImageUrl.isNullOrBlank()) {
+                    Spacer(Modifier.height(10.dp))
+                    Text("Proof Submitted:", fontWeight = FontWeight.SemiBold)
                     AsyncImage(
                         model = claim.proofImageUrl,
                         contentDescription = "Proof Image",
-                        modifier = Modifier.height(100.dp).clip(RoundedCornerShape(12.dp))
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp)
+                            .clip(RoundedCornerShape(12.dp))
                     )
+                }
+
+                Spacer(Modifier.height(10.dp))
                 Text("Status: ${claim.status}")
                 Text("Claim Date/Time: ${getFormattedDate(claim.claimTimestamp)}")
             }
@@ -247,5 +264,3 @@ fun ClaimDetailDialog(claim: ClaimRequest, onDismiss: () -> Unit) {
         }
     )
 }
-
-

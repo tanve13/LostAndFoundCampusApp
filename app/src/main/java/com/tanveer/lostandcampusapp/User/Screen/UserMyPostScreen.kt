@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.tanveer.lostandcampusapp.viewModel.UserViewModel
 import kotlinx.coroutines.CoroutineScope
@@ -32,7 +33,7 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun UserMyPostScreen(viewModel: UserViewModel) {
+fun UserMyPostScreen(viewModel: UserViewModel,navController: NavController) {
     val context = LocalContext.current
     val posts by viewModel.myPosts
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -109,7 +110,7 @@ fun UserMyPostScreen(viewModel: UserViewModel) {
                                 horizontalArrangement = Arrangement.End
                             ) {
                                 IconButton(onClick = {
-                                    Toast.makeText(context, "Update feature coming soon", Toast.LENGTH_SHORT).show()
+                                    navController.navigate("edit_post/${post.id}")
                                 }) {
                                     Icon(Icons.Default.Edit, contentDescription = "Update", tint = MaterialTheme.colorScheme.primary)
                                 }
