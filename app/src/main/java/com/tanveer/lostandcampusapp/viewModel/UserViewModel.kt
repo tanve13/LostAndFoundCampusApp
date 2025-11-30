@@ -158,54 +158,115 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
         onError: (String) -> Unit
     ) {
         val db = FirebaseFirestore.getInstance()
-
-        // REMOVE NULL VALUES → required for Firestore
         val safeMap = proofData.filterValues { it != null } as Map<String, Any>
 
         db.collection("proofs")
             .add(safeMap)
             .addOnSuccessListener {
 
+                val currentUser = FirebaseAuth.getInstance().currentUser
+                val userId = currentUser?.uid ?: ""
+                val userEmail = currentUser?.email ?: ""
+                val userName = name.value
+
+                val proofImageUrl = safeMap["imageUrl"] as? String
+                val proofDescription = safeMap["description"] as? String ?: ""
+
+                // 🔹 Pehle post ka data lao (title + imageUrl + ownerId)
                 db.collection("posts").document(postId).get()
                     .addOnSuccessListener { postDoc ->
-
                         val title = postDoc.getString("title") ?: "Item"
-                        val uname = name.value
+                        val postImageUrl = postDoc.getString("imageUrl")
+                        val ownerId = postDoc.getString("userId") ?: ""
 
-                        val notif = mapOf(
-                            "type" to "CLAIM_PROOF",
-                            "title" to "New Proof Submitted",
-                            "subtitle" to "$uname submitted proof for $title",
-                            "postId" to postId,
-                            "claimedBy" to uname,
-                            "timestamp" to System.currentTimeMillis(),
-                            "read" to false,
-                            "message" to safeMap["description"],
-                            "proofImageUrl" to safeMap["imageUrl"]
-                        )
+                        // 🔹 STEP A: existing claimRequest dhoondo (is post + user ke liye)
+                        db.collection("claimRequests")
+                            .whereEqualTo("postId", postId)
+                            .whereEqualTo("claimerId", userId)
+                            .limit(1)
+                            .get()
+                            .addOnSuccessListener { claimSnap ->
 
-                        db.collection("admin_notifications")
-                            .add(notif)
-                            .addOnSuccessListener {
-                                isSubmittingProof.value = false
-                                onSuccess()
+                                if (!claimSnap.isEmpty) {
+                                    // ✅ Claim already hai → usko proof + itemImageUrl se update karo
+                                    val claimDoc = claimSnap.documents[0]
+                                    val claimId = claimDoc.id
+
+                                    db.collection("claimRequests")
+                                        .document(claimId)
+                                        .update(
+                                            mapOf(
+                                                "proofImageUrl" to proofImageUrl,
+                                                "description" to proofDescription,
+                                                "itemImageUrl" to postImageUrl,
+                                                "itemTitle" to title
+                                            )
+                                        )
+                                } else {
+                                    // ❗ Pehle claim nahi tha → naya ClaimRequest doc banao
+                                    val claimId = db.collection("claimRequests").document().id
+
+                                    val newClaim = ClaimRequest(
+                                        id = claimId,
+                                        postId = postId,
+                                        claimerId = userId,
+                                        ownerId = ownerId,
+                                        itemTitle = title,
+                                        itemImageUrl = postImageUrl,
+                                        userName = userName.ifEmpty { "Unknown" },
+                                        userEmail = userEmail,
+                                        description = proofDescription,
+                                        proofImageUrl = proofImageUrl,
+                                        claimTimestamp = System.currentTimeMillis(),
+                                        status = "PENDING"
+                                    )
+
+                                    db.collection("claimRequests")
+                                        .document(claimId)
+                                        .set(newClaim)
+                                }
+
+                                // 🔹 STEP B: admin notification (jaise pehle tha)
+                                val notif = mapOf(
+                                    "type" to "CLAIM_PROOF",
+                                    "title" to "New Proof Submitted",
+                                    "subtitle" to "$userName submitted proof for $title",
+                                    "postId" to postId,
+                                    "claimedBy" to userName,
+                                    "timestamp" to System.currentTimeMillis(),
+                                    "read" to false,
+                                    "message" to proofDescription,
+                                    "proofImageUrl" to proofImageUrl
+                                )
+
+                                db.collection("admin_notifications")
+                                    .add(notif)
+                                    .addOnSuccessListener {
+                                        isSubmittingProof.value = false
+                                        onSuccess()
+                                    }
+                                    .addOnFailureListener {
+                                        isSubmittingProof.value = false
+                                        onError("Notification failed!")
+                                    }
                             }
                             .addOnFailureListener {
                                 isSubmittingProof.value = false
-                                onError("Notification failed!")
+                                onError("Claim lookup failed!")
                             }
                     }
                     .addOnFailureListener {
                         isSubmittingProof.value = false
                         onError("Post fetch failed!")
                     }
-
             }
             .addOnFailureListener {
                 isSubmittingProof.value = false
                 onError("Saving proof failed!")
             }
     }
+
+
 
 
 

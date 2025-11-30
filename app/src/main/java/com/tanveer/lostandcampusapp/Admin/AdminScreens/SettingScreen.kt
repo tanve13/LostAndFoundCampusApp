@@ -33,6 +33,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -54,7 +55,9 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
+import com.google.firebase.firestore.FirebaseFirestore
 import com.tanveer.lostandcampusapp.Admin.AdminModel.AdminViewModel
+import com.tanveer.lostandcampusapp.User.Screen.EditProfileDialog
 import com.tanveer.lostandcampusapp.data.AuthRepo
 
 @Composable
@@ -70,6 +73,7 @@ fun SettingScreen(
     val regNo = sharedPref.getString("regNo", null) ?: return
     val imageUrl by adminViewModel.profileImageUrl.collectAsState()
     var showLogoutDialog by remember { mutableStateOf(false) }
+    var showEditProfileDialog by remember { mutableStateOf(false) }
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -221,7 +225,7 @@ fun SettingScreen(
             }
 
             // ---------------- SETTINGS LIST --------------------
-            SettingOptionItem("Edit Profile") { }
+            SettingOptionItem("Edit Profile") {showEditProfileDialog = true  }
             SettingOptionItem("Change Password") { }
             SettingOptionItem("Contact Support") {
                 val intent = Intent(Intent.ACTION_SENDTO).apply {
@@ -239,6 +243,14 @@ fun SettingScreen(
             SettingOptionItem("Logout", Color.Red) {
                 showLogoutDialog = true
             }
+            Text(
+                text = "Version 1.0.0",
+                fontSize = 13.sp,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .padding(bottom = 16.dp)
+            )
         }
     }
 
@@ -261,6 +273,28 @@ fun SettingScreen(
             }
         )
     }
+//    if (showEditProfileDialog) {
+//        EditProfileDialog(
+//            currentName = adminViewModel.adminName.value,
+//            onDismiss = { showEditProfileDialog = false },
+//            onSave = { newName ->
+//                val regNo = adminViewModel.adminEmail.value
+//                if (regNo.isNotEmpty()) {
+//                    val db = FirebaseFirestore.getInstance()
+//                    db.collection("users").document(regNo)
+//                        .update("name", newName)
+//                        .addOnSuccessListener {
+//                            adminViewModel.fetchAdminProfile(newName, regNo)
+//                            Toast.makeText(context, "Profile updated", Toast.LENGTH_SHORT).show()
+//                        }
+//                        .addOnFailureListener { e ->
+//                            Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+//                        }
+//                }
+//                showEditProfileDialog = false
+//            }
+//        )
+//    }
 }
 
 @Composable
