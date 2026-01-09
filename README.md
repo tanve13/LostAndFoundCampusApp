@@ -104,10 +104,6 @@ The app provides separate **User** and **Admin** panels and uses modern cloud se
 
 ---
 
-## ⚙️ Installation & Setup
 
-1. Clone the repository
-   ```bash
-   git clone https://github.com/your-username/campus-lost-found-app.git
 
 
