@@ -90,7 +90,6 @@ The app provides separate **User** and **Admin** panels and uses modern cloud se
 
 ## 📸 Image Storage
 - Images are uploaded to **Cloudinary**
-- Secure and optimized image delivery
 - Image URLs stored in Firebase Database
 
 ---
