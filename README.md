@@ -14,7 +14,7 @@ The app provides separate **User** and **Admin** panels and uses modern cloud se
 - View all lost & found items
 - Search and filter items
 - Receive push notifications for item updates
-- Contact item owner/finder securely
+- Profile screen with many setting options 
 
 ---
 
