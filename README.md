@@ -15,7 +15,6 @@ The app provides separate **User** and **Admin** panels and uses modern cloud se
 - Search and filter items
 - Receive push notifications for item updates
 - Profile screen with many setting options 
-
 ---
 
 ### 🛠️ Admin Panel
