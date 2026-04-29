@@ -1,6 +1,6 @@
 # 🎒 Campus Lost & Found App
 
-A **Campus Lost & Found Management System** designed to help students and staff easily report, find, and recover lost items within a campus.  
+A **Campus Lost & Found Management System** designed to help students and staff easily report, find, and recover lost items within a campus.   
 The app provides separate **User** and **Admin** panels and uses modern cloud services for storage, authentication, and notifications.
     
 ---   
