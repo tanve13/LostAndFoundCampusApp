@@ -5,7 +5,7 @@ The app provides separate **User** and **Admin** panels and uses modern cloud se
     
 ---    
  
-## 📱 Features
+## 📱 Features 
 
 ### 👤 User Panel
 - User registration & login (Firebase Authentication)
